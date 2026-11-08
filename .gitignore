@@ -1,0 +1,32 @@
+# ==== Credenciales y secretos (NUNCA subir a Git) ====
+.env
+backend/secrets/
+*.env
+!.env.example
+
+# ==== Firebase ====
+backend/firebase/*.json
+*firebase-adminsdk*.json
+
+# ==== Node ====
+node_modules/
+dist/
+coverage/
+npm-debug.log*
+
+# ==== Android / Gradle ====
+.gradle/
+build/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# ==== IDE ====
+.idea/
+*.iml
+.vscode/
+
+# ==== SO ====
+Thumbs.db
+.DS_Store
