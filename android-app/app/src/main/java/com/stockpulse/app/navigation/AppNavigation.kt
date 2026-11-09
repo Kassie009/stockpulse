@@ -126,8 +126,7 @@ fun StockPulseApp() {
             )
         }
         composable(Routes.ALERTS) {
-            // Regreso: pestaña Perfil de la barra inferior
-            AlertsScreen()
+            AlertsScreen(onBack = { navController.popBackStack() })
         }
     }
 }

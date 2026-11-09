@@ -40,7 +40,7 @@ import java.time.format.DateTimeFormatter
  * notificaciones push reales (FCM) al dispositivo.
  */
 @Composable
-fun AlertsScreen(viewModel: AlertsViewModel = hiltViewModel()) {
+fun AlertsScreen(viewModel: AlertsViewModel = hiltViewModel(), onBack: () -> Unit = {}) {
     val state by viewModel.state.collectAsState()
 
     Column(
@@ -49,6 +49,11 @@ fun AlertsScreen(viewModel: AlertsViewModel = hiltViewModel()) {
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
+        OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
+            Text("←  Volver")
+        }
+        Spacer(Modifier.height(8.dp))
+
         Text("Mis alertas", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Text(
             "Te avisamos con una notificacion cuando se cumpla",
