@@ -33,8 +33,8 @@ export const tradingController = {
         return;
       }
       const input = parseTradeBody(req);
-      if (input === null) {
-        res.status(400).json({ ok: false, error: "Datos de operacion invalidos" });
+      if (typeof input === "string") {
+        res.status(400).json({ ok: false, error: input });
         return;
       }
       const result = await tradingService.trade(userJwt, input, "buy");
@@ -52,8 +52,8 @@ export const tradingController = {
         return;
       }
       const input = parseTradeBody(req);
-      if (input === null) {
-        res.status(400).json({ ok: false, error: "Datos de operacion invalidos" });
+      if (typeof input === "string") {
+        res.status(400).json({ ok: false, error: input });
         return;
       }
       const result = await tradingService.trade(userJwt, input, "sell");
@@ -84,10 +84,14 @@ export const tradingController = {
   },
 };
 
-function parseTradeBody(req: Request): TradeInput | null {
+function parseTradeBody(req: Request): TradeInput | string {
   const parsed = tradeSchema.safeParse(req.body);
   if (!parsed.success) {
-    return null;
+    const issues = parsed.error.issues;
+    if (!issues.length) {
+      return "Datos de operacion invalidos";
+    }
+    return issues.map((i) => i.message).join("; ");
   }
   return parsed.data;
 }
