@@ -40,11 +40,11 @@ import androidx.compose.ui.unit.dp
 import com.stockpulse.app.ui.theme.RedLoss
 
 /**
- * FASE 3 - Pantalla Perfil y configuracion (visual; las acciones activas
- * llegan con Autenticacion FASE 4 y Notificaciones FASE 7).
+ * FASE 4 - Pantalla Perfil y configuracion. Cerrar sesion ahora es real.
+ * (Dispositivos/Notificaciones activos en FASE 7/9).
  */
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(onLogout: () -> Unit) {
     val context = LocalContext.current
     var notificationsEnabled by remember { mutableStateOf(true) }
 
@@ -150,11 +150,9 @@ fun ProfileScreen() {
         }
         Spacer(Modifier.height(20.dp))
 
-        // Cerrar sesion: visual; la logica llega con FASE 4
+        // Cerrar sesion: real (borra tokens y regresa a Bienvenida)
         Button(
-            onClick = {
-                Toast.makeText(context, "Disponible en FASE 4", Toast.LENGTH_SHORT).show()
-            },
+            onClick = onLogout,
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.errorContainer,
                 contentColor = RedLoss

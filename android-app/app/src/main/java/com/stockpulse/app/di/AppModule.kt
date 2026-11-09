@@ -31,10 +31,13 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient =
+    fun provideOkHttpClient(
+        authInterceptor: com.stockpulse.app.data.remote.AuthInterceptor
+    ): OkHttpClient =
         OkHttpClient.Builder()
             .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(15, TimeUnit.SECONDS)
+            .addInterceptor(authInterceptor)
             .build()
 
     @Provides
@@ -50,6 +53,11 @@ object NetworkModule {
     @Singleton
     fun provideStockPulseApi(retrofit: Retrofit): StockPulseApi =
         retrofit.create(StockPulseApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAuthApi(retrofit: Retrofit): com.stockpulse.app.data.remote.AuthApi =
+        retrofit.create(com.stockpulse.app.data.remote.AuthApi::class.java)
 }
 
 @Module
@@ -57,4 +65,7 @@ object NetworkModule {
 abstract class RepositoryModule {
     @Binds
     abstract fun bindHealthRepository(impl: HealthRepositoryImpl): HealthRepository
+
+    @Binds
+    abstract fun bindAuthRepository(impl: com.stockpulse.app.data.repository.AuthRepositoryImpl): com.stockpulse.app.domain.repository.AuthRepository
 }

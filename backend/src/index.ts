@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { env } from "./config/env";
 import { healthRouter } from "./routes/health";
+import { authRouter } from "./routes/auth";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
 
 const app = express();
@@ -12,6 +13,7 @@ app.use(express.json({ limit: "1mb" }));
 
 // Registre de rutas (FASE 2: solo health; se agregaran auth, stocks, simulator, etc.)
 app.use("/api/health", healthRouter);
+app.use("/api/auth", authRouter);
 
 // Utilidades
 app.get("/", (_req, res) => {

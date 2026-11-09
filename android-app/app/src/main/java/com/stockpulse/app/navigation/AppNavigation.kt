@@ -15,17 +15,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.stockpulse.app.presentation.auth.LoginScreen
+import com.stockpulse.app.presentation.auth.RegisterScreen
+import com.stockpulse.app.presentation.auth.SessionViewModel
+import com.stockpulse.app.presentation.auth.WelcomeScreen
 import com.stockpulse.app.presentation.dashboard.DashboardScreen
 import com.stockpulse.app.presentation.market.MarketScreen
 import com.stockpulse.app.presentation.portfolio.PortfolioScreen
 import com.stockpulse.app.presentation.profile.ProfileScreen
 
-/** Secciones de la navegacion inferior (seccion 7: navegacion inferior). */
+/**
+ * Secciones de la navegacion inferior (seccion 7 del prompt).
+ */
 data class Destination(
     val route: String,
     val label: String,
@@ -41,10 +48,66 @@ object AppDestinations {
     val bottomBarItems = listOf(DASHBOARD, MARKET, PORTFOLIO, PROFILE)
 }
 
+object Routes {
+    const val WELCOME = "welcome"
+    const val REGISTER = "register"
+    const val LOGIN = "login"
+    const val MAIN = "main"
+}
+
 @Composable
 fun StockPulseApp() {
     val navController = rememberNavController()
-    val backStackEntry by navController.currentBackStackEntryAsState()
+
+    NavHost(
+        navController = navController,
+        startDestination = Routes.WELCOME
+    ) {
+        composable(Routes.WELCOME) {
+            WelcomeScreen(
+                onCreateAccount = { navController.navigate(Routes.REGISTER) },
+                onLogin = { navController.navigate(Routes.LOGIN) }
+            )
+        }
+        composable(Routes.REGISTER) {
+            RegisterScreen(
+                onBack = { navController.popBackStack() },
+                onAuthed = {
+                    navController.navigate(Routes.MAIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable(Routes.LOGIN) {
+            LoginScreen(
+                onBack = { navController.popBackStack() },
+                onAuthed = {
+                    navController.navigate(Routes.MAIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable(Routes.MAIN) {
+            val sessionViewModel: SessionViewModel = viewModel()
+            MainScaffold(
+                onLogout = {
+                    sessionViewModel.logout()
+                    navController.navigate(Routes.WELCOME) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+    }
+}
+
+/** Contenedor de las 4 pestanas con barra inferior. */
+@Composable
+private fun MainScaffold(onLogout: () -> Unit) {
+    val tabNavController = rememberNavController()
+    val backStackEntry by tabNavController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
     Scaffold(
@@ -54,9 +117,8 @@ fun StockPulseApp() {
                     NavigationBarItem(
                         selected = currentRoute == destination.route,
                         onClick = {
-                            navController.navigate(destination.route) {
-                                // Volver siempre a la misma instancia de cada pestana
-                                popUpTo(navController.graph.findStartDestination().id) {
+                            tabNavController.navigate(destination.route) {
+                                popUpTo(tabNavController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
                                 launchSingleTop = true
@@ -71,14 +133,14 @@ fun StockPulseApp() {
         }
     ) { innerPadding ->
         NavHost(
-            navController = navController,
+            navController = tabNavController,
             startDestination = AppDestinations.DASHBOARD.route,
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(AppDestinations.DASHBOARD.route) { DashboardScreen() }
             composable(AppDestinations.MARKET.route) { MarketScreen() }
             composable(AppDestinations.PORTFOLIO.route) { PortfolioScreen() }
-            composable(AppDestinations.PROFILE.route) { ProfileScreen() }
+            composable(AppDestinations.PROFILE.route) { ProfileScreen(onLogout = onLogout) }
         }
     }
 }
