@@ -14,6 +14,7 @@ import { env } from "../config/env";
 
 import { getSupabaseService } from "../integrations/supabase";
 import { finnhubClient } from "../integrations/finnhub";
+import { sendFcmNotifications } from "../integrations/firebase";
 
 const CYCLE_MS = 20_000;          // cada 20 s (desarrollo)
 const COOLDOWN_MS = 10 * 60_000;  // 10 min entre disparos de la misma alerta
@@ -115,7 +116,7 @@ async function cycle(): Promise<void> {
     const tokens = (devices ?? []).map((d) => d.fcm_token).filter((t): t is string => Boolean(t));
 
     if (tokens.length > 0 && firebaseConfigured) {
-      pushResult = await sendPush(tokens, title, quote.price);
+      pushResult = await sendFcmNotifications(tokens, title, `Precio actual: $${quote.price.toFixed(2)}`);
     } else if (tokens.length === 0) {
       pushResult = "sin envio: el usuario no tiene dispositivos registrados";
     }
@@ -137,23 +138,6 @@ async function cycle(): Promise<void> {
   }
 }
 
-async function sendPush(tokens: string[], title: string, price: number): Promise<string> {
-  try {
-    // Module require perezoso (mismo patron que integrations/firebase.ts)
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { initFirebaseAdmin } = await import("../integrations/firebase");
-    initFirebaseAdmin();
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const admin = require("firebase-admin");
-    const res = await admin.messaging().sendEachForMulticast({
-      tokens,
-      notification: { title, body: `Precio actual: $${price.toFixed(2)}` },
-    });
-    return `${res.successCount} enviados, ${res.failureCount} fallidos`;
-  } catch (err) {
-    return `error de push: ${err instanceof Error ? err.message : String(err)}`;
-  }
-}
 
 export function startAlertEngine(): void {
   if (running) return;

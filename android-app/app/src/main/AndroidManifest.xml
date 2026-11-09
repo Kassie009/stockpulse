@@ -4,6 +4,7 @@
 
     <!-- Red: la app solo habla con NUESTRO backend (seccion 4.4 del prompt) -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- usesCleartextTraffic SOLO DESARROLLO: permite HTTP (http://10.0.2.2:3000).
          En produccion sera HTTPS y se elimina (seccion 12 del prompt). -->
@@ -30,6 +31,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- FASE 7: servicio de notificaciones (alertas de precio) -->
+        <service
+            android:name=".data.push.AppMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

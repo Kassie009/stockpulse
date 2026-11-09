@@ -1,5 +1,7 @@
 package com.stockpulse.app.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -7,12 +9,15 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material3.Icon
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -26,6 +31,7 @@ import com.stockpulse.app.presentation.auth.RegisterScreen
 import com.stockpulse.app.presentation.auth.SessionViewModel
 import com.stockpulse.app.presentation.auth.WelcomeScreen
 import com.stockpulse.app.presentation.dashboard.DashboardScreen
+import com.stockpulse.app.presentation.alerts.AlertsScreen
 import com.stockpulse.app.presentation.market.MarketScreen
 import com.stockpulse.app.presentation.portfolio.PortfolioScreen
 import com.stockpulse.app.presentation.profile.ProfileScreen
@@ -53,15 +59,28 @@ object Routes {
     const val REGISTER = "register"
     const val LOGIN = "login"
     const val MAIN = "main"
+    const val ALERTS = "alerts"
 }
 
 @Composable
 fun StockPulseApp() {
+    val sessionViewModel: SessionViewModel = hiltViewModel()
+    val session by sessionViewModel.session.collectAsState()
+    val sessionReady by sessionViewModel.sessionReady.collectAsState()
+
+    // Puerta de entrada REAL: sesion persistida -> entra directo a la app
+    if (!sessionReady) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
     val navController = rememberNavController()
 
     NavHost(
         navController = navController,
-        startDestination = Routes.WELCOME
+        startDestination = if (session != null) Routes.MAIN else Routes.WELCOME
     ) {
         composable(Routes.WELCOME) {
             WelcomeScreen(
@@ -100,15 +119,22 @@ fun StockPulseApp() {
                     navController.navigate(Routes.WELCOME) {
                         popUpTo(0) { inclusive = true }
                     }
+                },
+                onNavigateToAlerts = {
+                    navController.navigate(Routes.ALERTS)
                 }
             )
+        }
+        composable(Routes.ALERTS) {
+            // Regreso: pestaña Perfil de la barra inferior
+            AlertsScreen()
         }
     }
 }
 
 /** Contenedor de las 4 pestanas con barra inferior. */
 @Composable
-private fun MainScaffold(onLogout: () -> Unit) {
+private fun MainScaffold(onLogout: () -> Unit, onNavigateToAlerts: () -> Unit) {
     val tabNavController = rememberNavController()
     val backStackEntry by tabNavController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -143,7 +169,12 @@ private fun MainScaffold(onLogout: () -> Unit) {
             composable(AppDestinations.DASHBOARD.route) { DashboardScreen() }
             composable(AppDestinations.MARKET.route) { MarketScreen() }
             composable(AppDestinations.PORTFOLIO.route) { PortfolioScreen() }
-            composable(AppDestinations.PROFILE.route) { ProfileScreen(onLogout = onLogout) }
+            composable(AppDestinations.PROFILE.route) {
+                ProfileScreen(
+                    onLogout = onLogout,
+                    onOpenAlerts = onNavigateToAlerts
+                )
+            }
         }
     }
 }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "10838956044",
+    "project_id": "stockpulse-c2c3c",
+    "storage_bucket": "stockpulse-c2c3c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:10838956044:android:44846df329a89f23cb7629",
+        "android_client_info": {
+          "package_name": "com.stockpulse.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCn10gNsVkrcckSYJ_88IqEliyAodMt2qM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

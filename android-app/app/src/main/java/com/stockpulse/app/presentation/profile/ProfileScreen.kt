@@ -44,7 +44,7 @@ import com.stockpulse.app.ui.theme.RedLoss
  * (Dispositivos/Notificaciones activos en FASE 7/9).
  */
 @Composable
-fun ProfileScreen(onLogout: () -> Unit) {
+fun ProfileScreen(onLogout: () -> Unit, onOpenAlerts: () -> Unit = {}) {
     val context = LocalContext.current
     var notificationsEnabled by remember { mutableStateOf(true) }
 
@@ -101,6 +101,14 @@ fun ProfileScreen(onLogout: () -> Unit) {
             }
         }
         Spacer(Modifier.height(12.dp))
+
+        OptionCard(
+            icon = Icons.Filled.Notifications,
+            title = "Mis alertas de precio",
+            subtitle = "Crear alertas y recibir notificaciones push",
+            onClick = onOpenAlerts
+        )
+        Spacer(Modifier.height(8.dp))
 
         OptionCard(
             icon = Icons.Filled.Watch,
