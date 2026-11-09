@@ -14,10 +14,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,10 +57,6 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(Modifier.height(16.dp))
-
-        // Estado del sistema en vivo (backend real)
-        SystemStatusCard(state = state, onRetry = viewModel::loadSystemStatus)
         Spacer(Modifier.height(16.dp))
 
         // Saldo real del wallet
@@ -109,82 +103,6 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
             state.recentTransactions.forEach { tx ->
                 MovementRow(tx)
                 Spacer(Modifier.height(8.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun SystemStatusCard(
-    state: DashboardUiState,
-    onRetry: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            when {
-                state.isLoading -> {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            "Conectando con el backend…",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-
-                state.systemStatus != null && state.systemStatus.backendOk -> {
-                    val status = state.systemStatus
-                    Text(
-                        text = "Backend: CONECTADO ✓",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = GreenGain
-                    )
-                    if (status.finnhubOk && status.aaplPrice != null) {
-                        Text(
-                            text = "AAPL (Finnhub): $${"%,.2f".format(status.aaplPrice)} " +
-                                "${
-                                    if ((status.aaplChangePercent ?: 0.0) >= 0.0) "+" else ""
-                                }${"%,.2f".format(status.aaplChangePercent ?: 0.0)}%",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if ((status.aaplChangePercent ?: 0.0) >= 0.0) GreenGain else RedLoss
-                        )
-                    }
-                    if (status.supabaseOk == true) {
-                        Text(
-                            text = "Base de datos (Supabase): OK ✓",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                else -> {
-                    Text(
-                        text = state.errorMessage ?: "Backend no disponible",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = RedLoss
-                    )
-                    Text(
-                        text = "Inicia el backend en tu PC y reintenta para ver datos en vivo.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Button(onClick = onRetry) {
-                        Text("Reintentar")
-                    }
-                }
             }
         }
     }
