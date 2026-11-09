@@ -1,5 +1,6 @@
 package com.stockpulse.app.data.repository
 
+import com.google.gson.Gson
 import com.stockpulse.app.data.local.SessionStore
 import com.stockpulse.app.data.remote.AuthApi
 import com.stockpulse.app.data.remote.AuthLoginRequest
@@ -12,6 +13,8 @@ import com.stockpulse.app.domain.repository.UserSession
 import kotlinx.coroutines.flow.Flow
 import retrofit2.Response
 import javax.inject.Inject
+
+private data class ErrorResponse(val ok: Boolean? = null, val error: String? = null)
 
 /**
  * Repositorio de autenticacion contra el backend.
@@ -72,8 +75,13 @@ class AuthRepositoryImpl @Inject constructor(
         sessionStore.clear()
     }
 
-    private fun extractError(response: Response<AuthResponse>): String? =
-        response.body()?.error
+    /** Lee el mensaje real del backend cuando responde 4xx (cuerpo de error). */
+    private fun extractError(response: Response<AuthResponse>): String? {
+        val raw = response.errorBody()?.string() ?: return response.body()?.error
+        return runCatching {
+            Gson().fromJson(raw, ErrorResponse::class.java).error
+        }.getOrNull() ?: response.body()?.error
+    }
 }
 
 private fun com.stockpulse.app.data.remote.SessionDto.toDomain(): UserSession = UserSession(

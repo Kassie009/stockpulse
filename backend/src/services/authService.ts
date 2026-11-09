@@ -83,17 +83,25 @@ function toSession(session: {
 }
 
 function mapSupabaseError(message: string): AuthError {
-  if (message.includes("already registered") || message.includes("already been registered")) {
+  const lower = message.toLowerCase();
+  if (lower.includes("already")) {
     return new AuthError("Ese correo ya esta registrado", 409);
   }
-  if (message.toLowerCase().includes("not confirmed")) {
+  if (lower.includes("not confirmed")) {
     return new AuthError("Debes confirmar tu correo antes de entrar", 403);
   }
-  if (message.toLowerCase().includes("invalid login credentials")) {
+  if (lower.includes("invalid login credentials")) {
     return new AuthError("Correo o contrasena incorrectos", 401);
   }
-  if (message.toLowerCase().includes("email address") || message.toLowerCase().includes("invalid")) {
-    return new AuthError("Datos invalidos para el registro", 400);
+  if (lower.includes("rate limit") || lower.includes("too many")) {
+    return new AuthError("Demasiados intentos. Espera unos minutos.", 429);
   }
-  return new AuthError("Error de autenticacion", 400);
+  if (lower.includes("email") && lower.includes("invalid")) {
+    return new AuthError("Correo invalido", 400);
+  }
+  if (lower.includes("password") || lower.includes("contrasena")) {
+    return new AuthError(message, 400);
+  }
+  // Fallback: mensaje real del proveedor para depuracion (seccion 14 del prompt)
+  return new AuthError(`Error de autenticacion: ${message}`, 400);
 }
