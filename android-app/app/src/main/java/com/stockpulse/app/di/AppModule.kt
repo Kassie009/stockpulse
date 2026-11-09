@@ -58,6 +58,11 @@ object NetworkModule {
     @Singleton
     fun provideAuthApi(retrofit: Retrofit): com.stockpulse.app.data.remote.AuthApi =
         retrofit.create(com.stockpulse.app.data.remote.AuthApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideMarketApi(retrofit: Retrofit): com.stockpulse.app.data.remote.MarketApi =
+        retrofit.create(com.stockpulse.app.data.remote.MarketApi::class.java)
 }
 
 @Module
@@ -68,4 +73,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindAuthRepository(impl: com.stockpulse.app.data.repository.AuthRepositoryImpl): com.stockpulse.app.domain.repository.AuthRepository
+
+    @Binds
+    abstract fun bindMarketRepository(impl: com.stockpulse.app.data.repository.MarketRepositoryImpl): com.stockpulse.app.domain.repository.MarketRepository
 }
