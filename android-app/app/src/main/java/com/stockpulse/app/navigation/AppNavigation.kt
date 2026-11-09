@@ -32,6 +32,7 @@ import com.stockpulse.app.presentation.auth.SessionViewModel
 import com.stockpulse.app.presentation.auth.WelcomeScreen
 import com.stockpulse.app.presentation.dashboard.DashboardScreen
 import com.stockpulse.app.presentation.alerts.AlertsScreen
+import com.stockpulse.app.presentation.payments.PaymentsScreen
 import com.stockpulse.app.presentation.market.MarketScreen
 import com.stockpulse.app.presentation.portfolio.PortfolioScreen
 import com.stockpulse.app.presentation.profile.ProfileScreen
@@ -60,6 +61,7 @@ object Routes {
     const val LOGIN = "login"
     const val MAIN = "main"
     const val ALERTS = "alerts"
+    const val PAYMENTS = "payments"
 }
 
 @Composable
@@ -85,10 +87,7 @@ fun StockPulseApp() {
         composable(Routes.WELCOME) {
             WelcomeScreen(
                 onCreateAccount = { navController.navigate(Routes.REGISTER) },
-                onLogin = { navController.navigate(Routes.LOGIN) },
-                onGuestAccess = {
-                    navController.navigate(Routes.MAIN)
-                }
+                onLogin = { navController.navigate(Routes.LOGIN) }
             )
         }
         composable(Routes.REGISTER) {
@@ -122,18 +121,28 @@ fun StockPulseApp() {
                 },
                 onNavigateToAlerts = {
                     navController.navigate(Routes.ALERTS)
+                },
+                onNavigateToPayments = {
+                    navController.navigate(Routes.PAYMENTS)
                 }
             )
         }
         composable(Routes.ALERTS) {
             AlertsScreen(onBack = { navController.popBackStack() })
         }
+        composable(Routes.PAYMENTS) {
+            PaymentsScreen(onBack = { navController.popBackStack() })
+        }
     }
 }
 
 /** Contenedor de las 4 pestanas con barra inferior. */
 @Composable
-private fun MainScaffold(onLogout: () -> Unit, onNavigateToAlerts: () -> Unit) {
+private fun MainScaffold(
+    onLogout: () -> Unit,
+    onNavigateToAlerts: () -> Unit,
+    onNavigateToPayments: () -> Unit
+) {
     val tabNavController = rememberNavController()
     val backStackEntry by tabNavController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -171,7 +180,8 @@ private fun MainScaffold(onLogout: () -> Unit, onNavigateToAlerts: () -> Unit) {
             composable(AppDestinations.PROFILE.route) {
                 ProfileScreen(
                     onLogout = onLogout,
-                    onOpenAlerts = onNavigateToAlerts
+                    onOpenAlerts = onNavigateToAlerts,
+                    onOpenPayments = onNavigateToPayments
                 )
             }
         }

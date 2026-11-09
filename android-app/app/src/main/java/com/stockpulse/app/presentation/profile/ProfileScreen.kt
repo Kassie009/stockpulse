@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.Button
@@ -27,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,16 +39,25 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.stockpulse.app.presentation.auth.SessionViewModel
 import com.stockpulse.app.ui.theme.RedLoss
 
 /**
- * FASE 4 - Pantalla Perfil y configuracion. Cerrar sesion ahora es real.
- * (Dispositivos/Notificaciones activos en FASE 7/9).
+ * Perfil y configuracion. Muestra los datos REALES de la sesion
+ * (email guardado tras login) y el cierre de sesion es real.
  */
 @Composable
-fun ProfileScreen(onLogout: () -> Unit, onOpenAlerts: () -> Unit = {}) {
+fun ProfileScreen(
+    onLogout: () -> Unit,
+    onOpenAlerts: () -> Unit = {},
+    onOpenPayments: () -> Unit = {},
+    sessionViewModel: SessionViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
     var notificationsEnabled by remember { mutableStateOf(true) }
+    val session by sessionViewModel.session.collectAsState()
+    val email = session?.email.orEmpty().ifBlank { "Cargando…" }
 
     Column(
         modifier = Modifier
@@ -66,7 +77,7 @@ fun ProfileScreen(onLogout: () -> Unit, onOpenAlerts: () -> Unit = {}) {
         )
         Spacer(Modifier.height(16.dp))
 
-        // Tarjeta de usuario (sesion segura llega en FASE 4)
+        // Tarjeta de usuario con los datos reales de la sesion
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -88,12 +99,12 @@ fun ProfileScreen(onLogout: () -> Unit, onOpenAlerts: () -> Unit = {}) {
                 Spacer(Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = "Usuario StockPulse",
+                        text = email,
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        text = "Sesión de ejemplo (FASE 4)",
+                        text = "Cuenta STOCKPULSE",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -111,9 +122,17 @@ fun ProfileScreen(onLogout: () -> Unit, onOpenAlerts: () -> Unit = {}) {
         Spacer(Modifier.height(8.dp))
 
         OptionCard(
+            icon = Icons.Filled.AddCircle,
+            title = "Obtener más créditos",
+            subtitle = "Paquetes de créditos con tarjeta",
+            onClick = onOpenPayments
+        )
+        Spacer(Modifier.height(8.dp))
+
+        OptionCard(
             icon = Icons.Filled.Watch,
             title = "Dispositivos vinculados",
-            subtitle = "Smartwatch Wear OS (configuración en FASE 9)",
+            subtitle = "Smartwatch Wear OS (próximamente)",
             onClick = {
                 Toast.makeText(context, "Disponible en FASE 9", Toast.LENGTH_SHORT).show()
             }

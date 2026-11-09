@@ -1,7 +1,6 @@
 package com.stockpulse.app.presentation.dashboard
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,22 +29,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.stockpulse.app.domain.repository.TransactionView
 import com.stockpulse.app.ui.theme.GreenGain
 import com.stockpulse.app.ui.theme.RedLoss
 
 /**
- * FASE 3 - Pantalla Dashboard (datos de EJEMPLO claramente marcados;
- * regla #13: datos ficticios identificados mientras no haya datos reales).
+ * Dashboard con datos REALES del usuario (portafolio y movimientos
+ * del motor de trading) + estado del sistema en vivo.
  */
-
-private data class DemoMovement(val symbol: String, val isBuy: Boolean, val amount: Double)
-
-private val demoMovements = listOf(
-    DemoMovement("AAPL", true, -1_162.00),
-    DemoMovement("NVDA", true, -491.50),
-    DemoMovement("TSLA", false, 1_187.00)
-)
-
 @Composable
 fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsState()
@@ -64,7 +55,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
             color = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = "Simulacion bursatil · datos de EJEMPLO",
+            text = "Simulación bursátil",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -74,20 +65,30 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
         SystemStatusCard(state = state, onRetry = viewModel::loadSystemStatus)
         Spacer(Modifier.height(16.dp))
 
-        // Tarjeta: saldo virtual
+        // Saldo real del wallet
         SummaryCard(
-            label = "Saldo virtual disponible",
-            amount = "10,000.00"
+            label = "Saldo disponible",
+            amount = state.balance?.let { "%,.2f".format(it) }
         )
         Spacer(Modifier.height(12.dp))
 
-        // Tarjeta: portafolio con ganancia simulada
+        // Valor real del portafolio + P&L no realizado vs costo de inversion
+        val value = state.portfolioValue
+        val cost = state.investedCost
+        var deltaText: String? = null
+        var deltaColor: Color = GreenGain
+        if (value != null && cost != null) {
+            val pnl = value - cost
+            val pct = if (cost > 0.0) (pnl / cost) * 100.0 else 0.0
+            deltaText = "${if (pnl >= 0.0) "+" else ""}${"%,.2f".format(pnl)} (${if (pct >= 0.0) "+" else ""}${"%.2f".format(pct)}%)"
+            deltaColor = if (pnl >= 0.0) GreenGain else RedLoss
+        }
         SummaryCard(
-            label = "Valor total del portafolio",
-            amount = "12,487.30",
-            extraLine = true,
-            deltaText = "+2,487.30 (+24.9%)",
-            deltaColor = GreenGain
+            label = "Valor del portafolio",
+            amount = value?.let { "%,.2f".format(it) },
+            extraLine = deltaText != null,
+            deltaText = deltaText ?: "",
+            deltaColor = deltaColor
         )
         Spacer(Modifier.height(20.dp))
 
@@ -97,17 +98,19 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
             fontWeight = FontWeight.SemiBold
         )
         Spacer(Modifier.height(8.dp))
-        demoMovements.forEach { movement ->
-            MovementRow(movement)
-            Spacer(Modifier.height(8.dp))
-        }
 
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = "Alertas importantes aparecen aqui cuando las configures (FASE 7).",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        if (state.recentTransactions.isEmpty()) {
+            Text(
+                text = "Aún no tienes movimientos. Ve a Portafolio y haz tu primera operación.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            state.recentTransactions.forEach { tx ->
+                MovementRow(tx)
+                Spacer(Modifier.height(8.dp))
+            }
+        }
     }
 }
 
@@ -148,7 +151,7 @@ private fun SystemStatusCard(
                     )
                     if (status.finnhubOk && status.aaplPrice != null) {
                         Text(
-                            text = "AAPL real (Finnhub): $${"%,.2f".format(status.aaplPrice)} " +
+                            text = "AAPL (Finnhub): $${"%,.2f".format(status.aaplPrice)} " +
                                 "${
                                     if ((status.aaplChangePercent ?: 0.0) >= 0.0) "+" else ""
                                 }${"%,.2f".format(status.aaplChangePercent ?: 0.0)}%",
@@ -173,7 +176,7 @@ private fun SystemStatusCard(
                         color = RedLoss
                     )
                     Text(
-                        text = "Mostrando datos de EJEMPLO (regla #13). Inicia el backend (npm run dev) y reintenta.",
+                        text = "Inicia el backend en tu PC y reintenta para ver datos en vivo.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -188,8 +191,9 @@ private fun SystemStatusCard(
 }
 
 @Composable
-private fun SummaryCard(    label: String,
-    amount: String,
+private fun SummaryCard(
+    label: String,
+    amount: String?,
     extraLine: Boolean = false,
     deltaText: String = "",
     deltaColor: Color = GreenGain
@@ -208,7 +212,7 @@ private fun SummaryCard(    label: String,
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "$$amount",
+                text = if (amount != null) "$$amount" else "Cargando…",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -226,7 +230,13 @@ private fun SummaryCard(    label: String,
 }
 
 @Composable
-private fun MovementRow(movement: DemoMovement) {
+private fun MovementRow(tx: TransactionView) {
+    val isBuy = tx.type.equals("buy", ignoreCase = true)
+    val pnlColor: Color? = when {
+        tx.profitLoss == null -> null
+        tx.profitLoss >= 0.0 -> GreenGain
+        else -> RedLoss
+    }
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -239,31 +249,45 @@ private fun MovementRow(movement: DemoMovement) {
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Marcador circular verde (venta) o rojo (compra)
+            // Marcador circular: verde venta / rojo compra (con flujo de dinero)
             Box(
                 modifier = Modifier
                     .size(12.dp)
-                    .background(if (movement.isBuy) RedLoss else GreenGain, CircleShape)
+                    .background(if (isBuy) RedLoss else GreenGain, CircleShape)
             )
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = movement.symbol,
+                    text = tx.symbol,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = if (movement.isBuy) "Compra" else "Venta",
+                    text = buildString {
+                        append(if (isBuy) "Compra" else "Venta")
+                        if (tx.quantity > 0) append(" · ${tx.quantity} título${if (tx.quantity == 1) "" else "s"}")
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Text(
-                text = "$${"%,.2f".format(movement.amount)}",
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = if (movement.isBuy) RedLoss else GreenGain
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                if (tx.total != null) {
+                    Text(
+                        text = "${if (isBuy) "-" else "+"}$${"%,.2f".format(kotlin.math.abs(tx.total))}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isBuy) RedLoss else GreenGain
+                    )
+                }
+                if (pnlColor != null) {
+                    Text(
+                        text = "P&L ${if ((tx.profitLoss ?: 0.0) >= 0.0) "+" else ""}${"%,.2f".format(tx.profitLoss)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = pnlColor
+                    )
+                }
+            }
         }
     }
 }
