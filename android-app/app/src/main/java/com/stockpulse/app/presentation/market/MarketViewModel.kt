@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.stockpulse.app.domain.repository.MarketQuote
 import com.stockpulse.app.domain.repository.MarketRepository
+import com.stockpulse.app.domain.repository.MarketResult
 import com.stockpulse.app.domain.repository.MarketSearchResult
+import com.stockpulse.app.domain.repository.TradingRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
@@ -23,12 +25,15 @@ data class MarketUiState(
     // Busqueda
     val query: String = "",
     val isSearching: Boolean = false,
-    val searchResults: List<MarketSearchResult> = emptyList()
+    val searchResults: List<MarketSearchResult> = emptyList(),
+    // Cantidad de acciones que posee el usuario (para el dialogo de venta)
+    val heldQuantity: Map<String, Int> = emptyMap()
 )
 
 @HiltViewModel
 class MarketViewModel @Inject constructor(
-    private val marketRepository: MarketRepository
+    private val marketRepository: MarketRepository,
+    private val tradingRepository: TradingRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MarketUiState())
@@ -38,7 +43,23 @@ class MarketViewModel @Inject constructor(
 
     init {
         loadPopular()
+        loadHeldQuantity()
     }
+
+    /** Cuantas acciones posee el usuario por simbolo (info para el dialogo). */
+    private fun loadHeldQuantity() {
+        viewModelScope.launch {
+            val summary = (tradingRepository.summary() as? com.stockpulse.app.domain.repository.PortfolioResult.Success)?.summary
+            if (summary != null) {
+                _state.update {
+                    it.copy(heldQuantity = summary.holdings.associate { h -> h.symbol to h.quantity })
+                }
+            }
+        }
+    }
+
+    /** Refresca las cantidades poseidas (tras una operacion). */
+    fun refreshHoldings() = loadHeldQuantity()
 
     fun loadPopular() {
         _state.update { it.copy(isRefreshing = it.stocks.isNotEmpty()) }

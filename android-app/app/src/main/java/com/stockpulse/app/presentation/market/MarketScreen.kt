@@ -1,5 +1,6 @@
 package com.stockpulse.app.presentation.market
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +50,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun MarketScreen(viewModel: MarketViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
+    var selectedSymbol by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -132,7 +137,17 @@ fun MarketScreen(viewModel: MarketViewModel = hiltViewModel()) {
                     item { ErrorInline(message = state.errorMessage) }
                 }
 
-                items(state.stocks) { quote -> StockRow(quote) }
+                items(state.stocks) { quote ->
+                    // FASE 6: toque en la fila abre el dialogo de compraventa
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selectedSymbol = quote.symbol }
+                            .padding(vertical = 2.dp)
+                    ) {
+                        StockRow(quote)
+                    }
+                }
 
                 item {
                     Text(
@@ -144,6 +159,28 @@ fun MarketScreen(viewModel: MarketViewModel = hiltViewModel()) {
                     )
                 }
             }
+        }
+    }
+
+    // FASE 6: dialogo de compraventa real
+    val selectedQuote = state.stocks.firstOrNull { it.symbol == selectedSymbol }
+    if (selectedQuote != null && selectedQuote.available && selectedQuote.price != null) {
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = {
+                selectedSymbol = null
+                viewModel.refreshHoldings()
+            }
+        ) {
+            TradeDialog(
+                quoteSymbol = selectedQuote.symbol,
+                quoteName = selectedQuote.name,
+                quotePrice = selectedQuote.price,
+                maxSellable = state.heldQuantity[selectedQuote.symbol],
+                onDismiss = {
+                    selectedSymbol = null
+                    viewModel.refreshHoldings()
+                }
+            )
         }
     }
 }
