@@ -20,7 +20,9 @@ data class TradeUiState(
     val successMessage: String? = null,
     val newBalance: Double? = null,
     val profitLoss: Double? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    /** Saldo actual del usuario (para limitar compras realistas). */
+    val walletBalance: Double? = null
 )
 
 @HiltViewModel
@@ -30,6 +32,21 @@ class TradeViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(TradeUiState())
     val state: StateFlow<TradeUiState> = _state
+
+    init {
+        val loaded = _state.value.walletBalance
+        if (loaded == null) loadBalance()
+    }
+
+    /** Saldo para validar cantidades realistas ANTES de intentar comprar. */
+    private fun loadBalance() {
+        viewModelScope.launch {
+            val summary = (tradingRepository.summary() as? com.stockpulse.app.domain.repository.PortfolioResult.Success)?.summary
+            if (summary != null) {
+                _state.update { it.copy(walletBalance = summary.balance) }
+            }
+        }
+    }
 
     fun buy(symbol: String, quantity: Int) = submit(symbol, quantity, isBuy = true)
 
@@ -48,13 +65,16 @@ class TradeViewModel @Inject constructor(
                 tradingRepository.sell(symbol, quantity)
             }
             when (result) {
-                is TradeResult.Success -> _state.update {
-                    it.copy(
-                        isSubmitting = false,
-                        successMessage = result.receipt.message,
-                        newBalance = result.receipt.walletBalance,
-                        profitLoss = result.receipt.profitLoss
-                    )
+                is TradeResult.Success -> {
+                    loadBalance() // saldo fresco tras la operacion
+                    _state.update {
+                        it.copy(
+                            isSubmitting = false,
+                            successMessage = result.receipt.message,
+                            newBalance = result.receipt.walletBalance,
+                            profitLoss = result.receipt.profitLoss
+                        )
+                    }
                 }
                 is TradeResult.Failure -> _state.update {
                     it.copy(isSubmitting = false, errorMessage = result.message)
@@ -70,6 +90,6 @@ class TradeViewModel @Inject constructor(
     }
 
     fun clearOutcome() {
-        _state.update { TradeUiState() }
+        _state.update { TradeUiState(walletBalance = _state.value.walletBalance) }
     }
 }

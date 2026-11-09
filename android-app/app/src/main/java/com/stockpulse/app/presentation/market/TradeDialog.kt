@@ -50,6 +50,31 @@ fun TradeDialog(
     val quantity = quantityText.toIntOrNull() ?: 0
     val estimatedTotal = (quantity.coerceAtLeast(0)) * (quotePrice ?: 0.0)
 
+    // Limpia resultados de SIMBOLOS anteriores (bug: dialogo con resultado pegado)
+    androidx.compose.runtime.LaunchedEffect(quoteSymbol) {
+        tradeViewModel.clearOutcome()
+    }
+
+    // Cierra el dialogo solo tras una operacion exitosa
+    androidx.compose.runtime.LaunchedEffect(state.successMessage) {
+        if (state.successMessage != null) {
+            kotlinx.coroutines.delay(2500)
+            onDismiss()
+        }
+    }
+
+    // Validaciones de cantidad (realistas):
+    val walletBalance: Double? = state.walletBalance
+    val qtyError: String? = when {
+        quantityText.isBlank() -> "Escribe una cantidad (no puede ser 0)"
+        quantity < 1 -> "La cantidad debe ser al menos 1 accion"
+        walletBalance != null && quotePrice != null &&
+            quantity > (walletBalance / quotePrice).toInt() ->
+            "No te alcanza: con tu saldo de $${"%,.2f".format(walletBalance)} puedes comprar ${(walletBalance / quotePrice).toInt()} de esta accion"
+        else -> null
+    }
+    val canSubmit = quantity >= 1 && quotePrice != null && qtyError == null
+
     Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -86,10 +111,19 @@ fun TradeDialog(
             } else {
                 OutlinedTextField(
                     value = quantityText,
-                    onValueChange = { quantityText = it.filter { ch -> ch.isDigit() }.take(6) },
+                    onValueChange = { input ->
+                        // Solo digitos: imposible escribir 0, negativos o texto
+                        val digits = input.filter { ch -> ch.isDigit() }.take(6)
+                        quantityText = digits.ifBlank { "" }
+                    },
                     label = { Text("Cantidad de acciones") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
+                    supportingText = if (qtyError != null && quantityText.isNotBlank()) {
+                        // aviso visible solo si hay texto
+                        ({ Text(qtyError, color = RedLoss) })
+                    } else null,
+                    isError = quantityText.isNotBlank() && qtyError != null,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(8.dp))
@@ -100,6 +134,13 @@ fun TradeDialog(
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold
                 )
+                state.walletBalance?.let {
+                    Text(
+                        text = "Tu saldo: $${"%,.2f".format(it)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 maxSellable?.let {
                     Text(
                         text = "Tienes $it accion${if (it == 1) "" else "es"} de $quoteSymbol",
@@ -117,7 +158,7 @@ fun TradeDialog(
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Button(
                         onClick = { tradeViewModel.buy(quoteSymbol, quantity) },
-                        enabled = !state.isSubmitting && quotePrice != null && quantity >= 1,
+                        enabled = canSubmit && !state.isSubmitting,
                         modifier = Modifier.weight(1f)
                     ) {
                         if (state.isSubmitting) {
@@ -129,7 +170,7 @@ fun TradeDialog(
                     Spacer(Modifier.width(8.dp))
                     OutlinedButton(
                         onClick = { tradeViewModel.sell(quoteSymbol, quantity) },
-                        enabled = !state.isSubmitting && quotePrice != null && quantity >= 1,
+                        enabled = canSubmit && !state.isSubmitting,
                         modifier = Modifier.weight(1f)
                     ) {
                         Text("Vender", color = if (maxSellable != null && maxSellable > 0) RedLoss else MaterialTheme.colorScheme.onSurfaceVariant)
