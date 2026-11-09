@@ -15,7 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -93,7 +93,7 @@ fun StockPulseApp() {
             )
         }
         composable(Routes.MAIN) {
-            val sessionViewModel: SessionViewModel = viewModel()
+            val sessionViewModel: SessionViewModel = hiltViewModel()
             MainScaffold(
                 onLogout = {
                     sessionViewModel.logout()
