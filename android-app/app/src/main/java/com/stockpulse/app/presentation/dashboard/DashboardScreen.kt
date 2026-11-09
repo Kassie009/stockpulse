@@ -15,16 +15,21 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.stockpulse.app.ui.theme.GreenGain
 import com.stockpulse.app.ui.theme.RedLoss
 
@@ -42,7 +47,9 @@ private val demoMovements = listOf(
 )
 
 @Composable
-fun DashboardScreen() {
+fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
+    val state by viewModel.uiState.collectAsState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -61,6 +68,10 @@ fun DashboardScreen() {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        Spacer(Modifier.height(16.dp))
+
+        // Estado del sistema en vivo (backend real)
+        SystemStatusCard(state = state, onRetry = viewModel::loadSystemStatus)
         Spacer(Modifier.height(16.dp))
 
         // Tarjeta: saldo virtual
@@ -101,8 +112,83 @@ fun DashboardScreen() {
 }
 
 @Composable
-private fun SummaryCard(
-    label: String,
+private fun SystemStatusCard(
+    state: DashboardUiState,
+    onRetry: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            when {
+                state.isLoading -> {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "Conectando con el backend…",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
+                state.systemStatus != null && state.systemStatus.backendOk -> {
+                    val status = state.systemStatus
+                    Text(
+                        text = "Backend: CONECTADO ✓",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = GreenGain
+                    )
+                    if (status.finnhubOk && status.aaplPrice != null) {
+                        Text(
+                            text = "AAPL real (Finnhub): $${"%,.2f".format(status.aaplPrice)} " +
+                                "${
+                                    if ((status.aaplChangePercent ?: 0.0) >= 0.0) "+" else ""
+                                }${"%,.2f".format(status.aaplChangePercent ?: 0.0)}%",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if ((status.aaplChangePercent ?: 0.0) >= 0.0) GreenGain else RedLoss
+                        )
+                    }
+                    if (status.supabaseOk == true) {
+                        Text(
+                            text = "Base de datos (Supabase): OK ✓",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                else -> {
+                    Text(
+                        text = state.errorMessage ?: "Backend no disponible",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = RedLoss
+                    )
+                    Text(
+                        text = "Mostrando datos de EJEMPLO (regla #13). Inicia el backend (npm run dev) y reintenta.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Button(onClick = onRetry) {
+                        Text("Reintentar")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SummaryCard(    label: String,
     amount: String,
     extraLine: Boolean = false,
     deltaText: String = "",
