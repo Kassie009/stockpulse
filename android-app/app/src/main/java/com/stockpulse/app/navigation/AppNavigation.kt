@@ -66,7 +66,10 @@ fun StockPulseApp() {
         composable(Routes.WELCOME) {
             WelcomeScreen(
                 onCreateAccount = { navController.navigate(Routes.REGISTER) },
-                onLogin = { navController.navigate(Routes.LOGIN) }
+                onLogin = { navController.navigate(Routes.LOGIN) },
+                onGuestAccess = {
+                    navController.navigate(Routes.MAIN)
+                }
             )
         }
         composable(Routes.REGISTER) {

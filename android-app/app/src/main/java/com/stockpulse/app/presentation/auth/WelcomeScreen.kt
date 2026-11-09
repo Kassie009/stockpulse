@@ -23,7 +23,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun WelcomeScreen(
     onCreateAccount: () -> Unit,
-    onLogin: () -> Unit
+    onLogin: () -> Unit,
+    onGuestAccess: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -65,6 +66,17 @@ fun WelcomeScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Iniciar sesión")
+            }
+            Spacer(Modifier.height(8.dp))
+            // Acceso de invitado: solo para explorar Mercado sin sesion (prueba)
+            androidx.compose.material3.TextButton(
+                onClick = onGuestAccess,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "Ver el Mercado como invitado (sin cuenta)",
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
             Spacer(Modifier.height(12.dp))
             Text(
