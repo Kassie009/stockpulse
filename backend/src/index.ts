@@ -5,6 +5,8 @@ import { healthRouter } from "./routes/health";
 import { authRouter } from "./routes/auth";
 import { stocksRouter } from "./routes/stocks";
 import { tradingRouter } from "./routes/trading";
+import { alertsRouter } from "./routes/alerts";
+import { startAlertEngine } from "./services/alertEngine";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
 
 const app = express();
@@ -18,6 +20,7 @@ app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/stocks", stocksRouter);
 app.use("/api/trading", tradingRouter);
+app.use("/api/alerts", alertsRouter);
 
 // Utilidades
 app.get("/", (_req, res) => {
@@ -31,6 +34,7 @@ app.listen(env.PORT, () => {
   console.log(
     `[stockpulse-backend] escuchando en http://localhost:${env.PORT} (${env.NODE_ENV})`
   );
+  startAlertEngine(); // FASE 7: motor de alertas (precio -> FCM)
 });
 
 export default app;
