@@ -6,6 +6,7 @@ import { authRouter } from "./routes/auth";
 import { stocksRouter } from "./routes/stocks";
 import { tradingRouter } from "./routes/trading";
 import { alertsRouter } from "./routes/alerts";
+import { paymentsRouter } from "./routes/payments";
 import { startAlertEngine } from "./services/alertEngine";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
 
@@ -21,6 +22,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/stocks", stocksRouter);
 app.use("/api/trading", tradingRouter);
 app.use("/api/alerts", alertsRouter);
+app.use("/api/payments", paymentsRouter);
 
 // Utilidades
 app.get("/", (_req, res) => {

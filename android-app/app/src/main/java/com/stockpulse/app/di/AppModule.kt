@@ -73,6 +73,11 @@ object NetworkModule {
     @Singleton
     fun provideAlertsApi(retrofit: Retrofit): com.stockpulse.app.data.remote.AlertsApi =
         retrofit.create(com.stockpulse.app.data.remote.AlertsApi::class.java)
+
+    @Provides
+    @Singleton
+    fun providePaymentsApi(retrofit: Retrofit): com.stockpulse.app.data.remote.PaymentsApi =
+        retrofit.create(com.stockpulse.app.data.remote.PaymentsApi::class.java)
 }
 
 @Module
@@ -92,4 +97,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindAlertsRepository(impl: com.stockpulse.app.data.repository.AlertsRepositoryImpl): com.stockpulse.app.domain.repository.AlertsRepository
+
+    @Binds
+    abstract fun bindPaymentsRepository(impl: com.stockpulse.app.data.repository.PaymentsRepositoryImpl): com.stockpulse.app.domain.repository.PaymentsRepository
 }
