@@ -4,6 +4,7 @@ import { env } from "./config/env";
 import { healthRouter } from "./routes/health";
 import { authRouter } from "./routes/auth";
 import { stocksRouter } from "./routes/stocks";
+import { tradingRouter } from "./routes/trading";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
 
 const app = express();
@@ -16,6 +17,7 @@ app.use(express.json({ limit: "1mb" }));
 app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/stocks", stocksRouter);
+app.use("/api/trading", tradingRouter);
 
 // Utilidades
 app.get("/", (_req, res) => {
