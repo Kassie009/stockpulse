@@ -324,16 +324,21 @@ private fun PantallaLogin(onLoggedIn: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().focusRequester(focusPassword)
             )
             Spacer(Modifier.height(8.dp))
-            Button(
-                onClick = entrar,
-                enabled = !enviando,
-                colors = ButtonDefaults.buttonColors(
-                    backgroundColor = BrandNavy,
-                    contentColor = Color.White
-                ),
-                modifier = Modifier.fillMaxWidth()
+            // Boton compacto del mismo tamano que los campos
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(34.dp)
+                    .background(BrandNavy, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                    .clickable(enabled = !enviando) { entrar() },
+                contentAlignment = Alignment.Center
             ) {
-                Text(if (enviando) "Entrando…" else "Entrar")
+                Text(
+                    if (enviando) "Entrando…" else "Entrar",
+                    fontSize = 11.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
             error?.let { msg ->
                 Text(
