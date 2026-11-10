@@ -164,7 +164,15 @@ class MainActivity : ComponentActivity() {
                 is EstadoApp.Login -> PantallaLogin(
                     onLoggedIn = { estado = EstadoApp.CargandoDatos }
                 )
-                is EstadoApp.Resumen -> PantallaResumen(actual)
+                is EstadoApp.Resumen -> PantallaResumen(
+                    estado = actual,
+                    onLogout = {
+                        scope.launch {
+                            WearSession.clear(applicationContext)
+                            estado = EstadoApp.Login
+                        }
+                    }
+                )
                 is EstadoApp.Error -> PantallaError(
                     mensaje = actual.mensaje,
                     onReintentar = { estado = EstadoApp.CargandoDatos },
@@ -322,7 +330,10 @@ private fun PantallaLogin(onLoggedIn: () -> Unit) {
 }
 
 @Composable
-private fun PantallaResumen(estado: EstadoApp.Resumen) {
+private fun PantallaResumen(
+    estado: EstadoApp.Resumen,
+    onLogout: () -> Unit
+) {
     val summary = estado.summary
     val saldo = summary.balance ?: 0.0
     val valor = summary.portfolioValue ?: 0.0
@@ -483,6 +494,18 @@ private fun PantallaResumen(estado: EstadoApp.Resumen) {
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
+            }
+            item {
+                Button(
+                    onClick = onLogout,
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = AccentLoss,
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Cerrar sesion")
+                }
             }
         }
     }

@@ -85,32 +85,21 @@ fun DevicesScreen(viewModel: DevicesViewModel = hiltViewModel(), onBack: () -> U
             }
         }
 
-        Spacer(Modifier.height(16.dp))
-        Button(onClick = viewModel::reRegisterPhone, modifier = Modifier.fillMaxWidth()) {
-            Text("Re-registrar este teléfono")
-        }
         Spacer(Modifier.height(8.dp))
-        Button(onClick = viewModel::load, modifier = Modifier.fillMaxWidth()) {
-            Text("Actualizar lista")
-        }
 
-        Spacer(Modifier.height(12.dp))
         Card(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
             Column(Modifier.padding(12.dp)) {
-                Text("¿Cómo vinculo mi reloj?", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                 Text(
-                    "1. Instala StockPulse en tu reloj Wear OS\n" +
-                        "2. Ábrelo y accede con la MISMA cuenta\n" +
-                        "3. Aparecerá aquí automáticamente",
+                    "Vincula tu reloj: abre StockPulse en Wear OS e inicia sesión con esta misma cuenta. Aparecerá aquí al instante.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
         Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
             Text("← Volver")
         }

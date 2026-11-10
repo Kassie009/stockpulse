@@ -2,7 +2,6 @@ package com.stockpulse.app.presentation.devices
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.stockpulse.app.data.remote.currentFcmToken
 import com.stockpulse.app.domain.repository.AlertsRepository
 import com.stockpulse.app.domain.repository.DevicesResult
 import com.stockpulse.app.domain.repository.LinkedDevice
@@ -45,24 +44,6 @@ class DevicesViewModel @Inject constructor(
                     it.copy(isLoading = false, errorMessage = r.message)
                 }
             }
-        }
-    }
-
-    /** Re-registra el token de ESTE telefono (por si cambio). */
-    fun reRegisterPhone() {
-        viewModelScope.launch {
-            val token = currentFcmToken()
-            if (token == null) {
-                _state.update { it.copy(infoMessage = "El telefono aun no tiene token FCM disponible") }
-                return@launch
-            }
-            when (val r = alertsRepository.registerDevice(token, "android-phone")) {
-                is com.stockpulse.app.domain.repository.AlertsWriteResult.Success ->
-                    _state.update { it.copy(infoMessage = "Telefono registrado de nuevo", isLoading = true) }
-                is com.stockpulse.app.domain.repository.AlertsWriteResult.Failure ->
-                    _state.update { it.copy(infoMessage = r.message) }
-            }
-            load()
         }
     }
 }
