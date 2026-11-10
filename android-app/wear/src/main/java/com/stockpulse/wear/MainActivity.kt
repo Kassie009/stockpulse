@@ -7,12 +7,20 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -363,6 +371,7 @@ private fun PantallaLogin(onLoggedIn: () -> Unit) {
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 private fun PantallaResumen(
     estado: EstadoApp.Resumen,
     onLogout: () -> Unit
@@ -376,107 +385,191 @@ private fun PantallaResumen(
     val pnlColor = if (pnl >= 0.0) AccentGain else AccentLoss
     val posiciones = summary.holdingsEnVivo.orEmpty()
 
-    val listaEstado = rememberScalingLazyListState(initialCenterItemIndex = 0)
+    // 3 pantallas deslizantes: 0=Portafolio, 1=Alertas, 2=Cerrar sesion
+    val pagerEstado = androidx.compose.foundation.pager.rememberPagerState(
+        initialPage = 0,
+        pageCount = { 3 }
+    )
 
-    Scaffold(
-        timeText = WearTimeText,
-        positionIndicator = { PositionIndicator(scalingLazyListState = listaEstado) }
-    ) {
-        ScalingLazyColumn(state = listaEstado, modifier = Modifier.fillMaxSize()) {
-            // Lo esencial: saldo real
-            item {
-                Column(Modifier.fillMaxWidth()) {
-                    Text(
-                        "Saldo",
-                        fontSize = 9.sp,
-                        color = TextMuted,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Text(
-                        "$${"%,.2f".format(saldo)}",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextDark,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-            // Portafolio en una sola linea
-            item {
-                Text(
-                    "Portafolio $${"%,.2f".format(valor)} · ${if (pnl >= 0.0) "+" else ""}${"%,.2f".format(pnl)} (${if (pnlPct >= 0.0) "+" else ""}${"%.2f".format(pnlPct)}%)",
-                    fontSize = 11.sp,
-                    color = pnlColor,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            // Posiciones: una linea por titulo
-            if (posiciones.isEmpty()) {
-                item {
-                    Text(
-                        "Sin posiciones",
-                        fontSize = 10.sp,
-                        color = TextMuted,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-            posiciones.forEach { h ->
-                item {
-                    Text(
-                        buildString {
-                            append("${h.symbol} x${h.quantity ?: 0}")
-                            h.unrealizedPnl?.let {
-                                append("  ${if (it >= 0.0) "+" else ""}${"%,.2f".format(it)}")
+    Scaffold(timeText = WearTimeText) {
+        Box(Modifier.fillMaxSize()) {
+            androidx.compose.foundation.pager.HorizontalPager(
+                state = pagerEstado,
+                modifier = Modifier.fillMaxSize()
+            ) { pagina ->
+                when (pagina) {
+                    0 -> {
+                        // PAGINA 1 · Portafolio (un vistazo)
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
+                        ) {
+                            Text(
+                                "STOCKPULSE",
+                                fontSize = 9.sp,
+                                color = TextMuted,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Text(
+                                "Saldo",
+                                fontSize = 9.sp,
+                                color = TextMuted,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Text(
+                                "$${"%,.2f".format(saldo)}",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextDark,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Text(
+                                "Portafolio $${"%,.2f".format(valor)} · ${
+                                    if (pnl >= 0.0) "+" else ""
+                                }${"%,.2f".format(pnl)} (${
+                                    if (pnlPct >= 0.0) "+" else ""
+                                }${"%.2f".format(pnlPct)}%)",
+                                fontSize = 11.sp,
+                                color = pnlColor,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            if (posiciones.isEmpty()) {
+                                Text(
+                                    "Sin posiciones",
+                                    fontSize = 10.sp,
+                                    color = TextMuted,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
-                        },
-                        fontSize = 11.sp,
-                        color = TextDark,
-                        overflow = TextOverflow.Ellipsis,
-                        maxLines = 1,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-            // Alertas compactas en una linea
-            item {
-                Text(
-                    if (estado.alerts.isEmpty()) {
-                        "Sin alertas activas"
-                    } else {
-                        estado.alerts.joinToString("   ") { alerta ->
-                            when (alerta.type) {
-                                "price_above" -> "${alerta.symbol} ≥$${"%,.0f".format(alerta.threshold)}"
-                                "price_below" -> "${alerta.symbol} ≤$${"%,.0f".format(alerta.threshold)}"
-                                else -> "${alerta.symbol} ${"%,.1f".format(alerta.threshold)}%"
+                            posiciones.take(3).forEach { h ->
+                                Text(
+                                    buildString {
+                                        append("${h.symbol} x${h.quantity ?: 0}")
+                                        h.unrealizedPnl?.let {
+                                            append("  ${if (it >= 0.0) "+" else ""}${"%,.2f".format(it)}")
+                                        }
+                                    },
+                                    fontSize = 10.sp,
+                                    color = TextDark,
+                                    overflow = TextOverflow.Ellipsis,
+                                    maxLines = 1,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
+                            Text(
+                                "Desliza para ver mas  →",
+                                fontSize = 8.sp,
+                                color = TextMuted,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
-                    },
-                    fontSize = 9.sp,
-                    color = TextMuted,
-                    overflow = TextOverflow.Ellipsis,
-                    maxLines = 2,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                    }
+                    1 -> {
+                        // PAGINA 2 · Tus alertas
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
+                        ) {
+                            Text(
+                                "Tus alertas",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextDark,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            if (estado.alerts.isEmpty()) {
+                                Text(
+                                    "Sin alertas activas",
+                                    fontSize = 10.sp,
+                                    color = TextMuted,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                            estado.alerts.forEach { alerta ->
+                                Text(
+                                    buildString {
+                                        append(alerta.symbol)
+                                        when (alerta.type) {
+                                            "price_above" -> append(" ≥ $${"%,.2f".format(alerta.threshold)}")
+                                            "price_below" -> append(" ≤ $${"%,.2f".format(alerta.threshold)}")
+                                            "change_pos" -> append(" ↗ +${"%,.1f".format(alerta.threshold)}%")
+                                            "change_neg" -> append(" ↘ −${"%,.1f".format(alerta.threshold)}%")
+                                            else -> append(" ${"%,.1f".format(alerta.threshold)}%")
+                                        }
+                                    },
+                                    fontSize = 11.sp,
+                                    color = TextDark,
+                                    overflow = TextOverflow.Ellipsis,
+                                    maxLines = 1,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                            Text(
+                                "Se crean y editan en el telefono",
+                                fontSize = 8.sp,
+                                color = TextMuted,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                    else -> {
+                        // PAGINA 3 · Cuenta
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
+                        ) {
+                            androidx.compose.material3.Text(
+                                "Cerrar sesion",
+                                fontSize = 13.sp,
+                                color = AccentLoss,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(onClick = onLogout)
+                                    .padding(vertical = 12.dp)
+                            )
+                            Text(
+                                "StockPulse Wear",
+                                fontSize = 8.sp,
+                                color = TextMuted,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
             }
-            // Cerrar sesion: texto discreto, sin boton gigante
-            item {
-                androidx.compose.material3.Text(
-                    "Cerrar sesion",
-                    fontSize = 10.sp,
-                    color = TextMuted,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = onLogout)
-                        .padding(vertical = 8.dp)
-                )
+            // Puntos de paginacion (ayudan a entender que se puede deslizar)
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 10.dp),
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)
+            ) {
+                repeat(3) { indice ->
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .background(
+                                if (pagerEstado.currentPage == indice) BrandNavy
+                                else Color(0xFF5B6B85).copy(alpha = 0.30f),
+                                androidx.compose.foundation.shape.CircleShape
+                            )
+                    )
+                }
             }
         }
     }
