@@ -113,7 +113,7 @@ fun PortfolioScreen(viewModel: PortfolioViewModel = hiltViewModel()) {
                             Column(Modifier.weight(1f)) {
                                 val pnl = summary.portfolioValue - summary.investedCost
                                 Text(
-                                    "P&L no realizado",
+                                    "Ganancia/Pérdida (no realizada)",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
