@@ -135,7 +135,7 @@ fun PortfolioScreen(viewModel: PortfolioViewModel = hiltViewModel()) {
 
                 if (summary.holdings.isEmpty()) {
                     Text(
-                        "Aún no tienes acciones. Ve al Mercado y compra tu primera con los créditos que te regalamos.",
+                        "Aún no tienes acciones.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

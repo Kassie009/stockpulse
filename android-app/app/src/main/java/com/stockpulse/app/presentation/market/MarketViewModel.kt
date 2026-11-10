@@ -44,6 +44,17 @@ class MarketViewModel @Inject constructor(
     init {
         loadPopular()
         loadHeldQuantity()
+        autoRefreshLoop()
+    }
+
+    /** Actualiza los precios solo cada 30s (los veras moverse sin tocar). */
+    private fun autoRefreshLoop() {
+        viewModelScope.launch {
+            while (true) {
+                delay(30_000)
+                loadPopular()
+            }
+        }
     }
 
     /** Cuantas acciones posee el usuario por simbolo (info para el dialogo). */
