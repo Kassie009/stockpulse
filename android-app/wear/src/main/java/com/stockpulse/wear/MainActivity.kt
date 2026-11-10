@@ -334,7 +334,7 @@ private fun PantallaLogin(onLoggedIn: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    if (enviando) "Entrando…" else "Entrar",
+                    if (enviando) "Iniciando sesión…" else "Iniciar sesión",
                     fontSize = 11.sp,
                     color = Color.White,
                     fontWeight = FontWeight.SemiBold
