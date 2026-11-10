@@ -23,6 +23,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -158,6 +159,20 @@ class MainActivity : ComponentActivity() {
         }
 
         MaterialTheme(colors = wearColors()) {
+            androidx.compose.material3.MaterialTheme(
+                colorScheme = androidx.compose.material3.lightColorScheme(
+                    primary = BrandNavy,
+                    onPrimary = Color.White,
+                    secondary = AccentGain,
+                    onSecondary = Color.White,
+                    error = AccentLoss,
+                    onError = Color.White,
+                    background = BgLight,
+                    onBackground = TextDark,
+                    surface = Color.White,
+                    onSurface = TextDark
+                )
+            ) {
             when (val actual: EstadoApp = estado) {
                 is EstadoApp.Iniciando, is EstadoApp.CargandoDatos ->
                     PantallaCargando("Cargando tu portafolio…")
@@ -184,6 +199,7 @@ class MainActivity : ComponentActivity() {
                     }
                 )
             }
+        }
         }
     }
 }
@@ -217,8 +233,41 @@ private fun PantallaLogin(onLoggedIn: () -> Unit) {
     var enviando by remember { mutableStateOf(false) }
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
+    val focusPassword = remember { androidx.compose.ui.focus.FocusRequester() }
 
     val listaEstado = rememberScalingLazyListState(initialCenterItemIndex = 0)
+
+    // Entrar: compartido entre el circulo azul (IME) y el boton
+    val entrar: () -> Unit = {
+        if (email.isBlank() || !email.contains("@")) {
+            error = "Escribe un email valido"
+        } else if (password.length < 6) {
+            error = "Contrasena de minimo 6 caracteres"
+        } else {
+            enviando = true
+            error = null
+            scope.launch {
+                val repo = WearRepository(context)
+                repo.login(email, password).fold(
+                    onSuccess = { session ->
+                        val token = session.accessToken
+                        if (token.isNullOrBlank()) {
+                            error = "El servidor devolvio una sesion invalida"
+                            enviando = false
+                        } else {
+                            WearSession.save(context, token)
+                            enviando = false
+                            onLoggedIn()
+                        }
+                    },
+                    onFailure = { e ->
+                        error = e.message ?: "No se pudo iniciar sesion"
+                        enviando = false
+                    }
+                )
+            }
+        }
+    }
 
     Scaffold(timeText = WearTimeText) {
         ScalingLazyColumn(
@@ -253,7 +302,13 @@ private fun PantallaLogin(onLoggedIn: () -> Unit) {
                         androidx.compose.material3.Text("Email", fontSize = 10.sp, color = TextMuted)
                     },
                     textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp, color = TextDark),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = androidx.compose.ui.text.input.ImeAction.Next
+                    ),
+                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                        onNext = { focusPassword.requestFocus() }
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -266,42 +321,19 @@ private fun PantallaLogin(onLoggedIn: () -> Unit) {
                     },
                     textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp, color = TextDark),
                     visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    modifier = Modifier.fillMaxWidth()
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                    ),
+                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                        onDone = { entrar() }
+                    ),
+                    modifier = Modifier.fillMaxWidth().focusRequester(focusPassword)
                 )
             }
             item {
                 Button(
-                    onClick = {
-                        if (email.isBlank() || !email.contains("@")) {
-                            error = "Escribe un email valido"
-                        } else if (password.length < 6) {
-                            error = "Contrasena de minimo 6 caracteres"
-                        } else {
-                            enviando = true
-                            error = null
-                            scope.launch {
-                                val repo = WearRepository(context)
-                                repo.login(email, password).fold(
-                                    onSuccess = { session ->
-                                        val token = session.accessToken
-                                        if (token.isNullOrBlank()) {
-                                            error = "El servidor devolvio una sesion invalida"
-                                            enviando = false
-                                        } else {
-                                            WearSession.save(context, token)
-                                            enviando = false
-                                            onLoggedIn()
-                                        }
-                                    },
-                                    onFailure = { e ->
-                                        error = e.message ?: "No se pudo iniciar sesion"
-                                        enviando = false
-                                    }
-                                )
-                            }
-                        }
-                    },
+                    onClick = entrar,
                     enabled = !enviando,
                     colors = ButtonDefaults.buttonColors(
                         backgroundColor = BrandNavy,
@@ -423,7 +455,9 @@ private fun PantallaResumen(
                             fontWeight = FontWeight.SemiBold,
                             color = TextDark,
                             overflow = TextOverflow.Ellipsis,
-                            maxLines = 1
+                            maxLines = 1,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
                         )
                         Text(
                             buildString {
@@ -435,7 +469,9 @@ private fun PantallaResumen(
                             fontSize = 9.sp,
                             color = TextMuted,
                             overflow = TextOverflow.Ellipsis,
-                            maxLines = 1
+                            maxLines = 1,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }
