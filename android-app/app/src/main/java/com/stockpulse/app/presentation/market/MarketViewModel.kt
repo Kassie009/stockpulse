@@ -45,6 +45,12 @@ class MarketViewModel @Inject constructor(
         loadPopular()
         loadHeldQuantity()
         autoRefreshLoop()
+        viewModelScope.launch {
+            com.stockpulse.app.data.sync.SyncBus.signal.collect {
+                loadPopular()
+                loadHeldQuantity()
+            }
+        }
     }
 
     /** Actualiza los precios solo cada 30s (los veras moverse sin tocar). */

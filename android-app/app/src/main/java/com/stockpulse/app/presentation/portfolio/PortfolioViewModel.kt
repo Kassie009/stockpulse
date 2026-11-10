@@ -31,6 +31,9 @@ class PortfolioViewModel @Inject constructor(
 
     init {
         refresh()
+        viewModelScope.launch {
+            com.stockpulse.app.data.sync.SyncBus.signal.collect { refresh() }
+        }
     }
 
     fun refresh() {

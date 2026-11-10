@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { tradingService, TradingError } from "../services/tradingService";
+import { notifyDataRefresh } from "../integrations/firebase";
 import { TradeInput, tradeSchema } from "../validators/tradeValidators";
 import { AuthedRequest } from "../middlewares/authMiddleware";
 
@@ -38,6 +39,7 @@ export const tradingController = {
         return;
       }
       const result = await tradingService.trade(userJwt, input, "buy");
+      void notifyDataRefresh(userJwt, "portfolio"); // reloj/otras pantallas se sincronizan al instante
       res.json({ ok: true, trade: result, message: `Compra realizada: ${result.quantity} de ${result.symbol} a $${result.unitPrice}` });
     } catch (err) {
       handleError(err, res, next);
@@ -57,6 +59,7 @@ export const tradingController = {
         return;
       }
       const result = await tradingService.trade(userJwt, input, "sell");
+      void notifyDataRefresh(userJwt, "portfolio");
       const pnl = result.profitLoss;
       res.json({
         ok: true,

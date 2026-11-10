@@ -1,4 +1,5 @@
 import { getSupabaseService } from "../integrations/supabase";
+import { notifyDataRefresh } from "../integrations/firebase";
 import { CreateAlertInput } from "../validators/alertValidators";
 
 /**
@@ -74,6 +75,7 @@ export const alertsService = {
     if (error) {
       throw new AlertsError(`No se pudo crear la alerta: ${error.message}`, 400);
     }
+    void notifyDataRefresh(userId, "alerts"); // sincroniza reloj/otro telefono al instante
     return data as AlertRow;
   },
 
@@ -100,6 +102,7 @@ export const alertsService = {
     if (error) {
       throw new AlertsError(`No se pudo eliminar la alerta: ${error.message}`, 400);
     }
+    void notifyDataRefresh(userId, "alerts");
   },
 
   async setActive(userId: string, id: string, active: boolean): Promise<void> {
@@ -112,5 +115,6 @@ export const alertsService = {
     if (error) {
       throw new AlertsError(`No se pudo actualizar la alerta: ${error.message}`, 400);
     }
+    void notifyDataRefresh(userId, "alerts");
   },
 };

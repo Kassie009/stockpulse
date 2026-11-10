@@ -31,6 +31,12 @@ class AppMessagingService : FirebaseMessagingService() {
     lateinit var alertsRepository: AlertsRepository
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
+        // Mensaje silencioso de sincronizacion: refresca las pantallas
+        // abiertas al instante (sin notificar nada al usuario)
+        if (remoteMessage.data["type"] == "sync") {
+            com.stockpulse.app.data.sync.SyncBus.notify()
+            return
+        }
         val notification = remoteMessage.notification ?: return
         showNotification(
             title = notification.title ?: "Alerta de precio",

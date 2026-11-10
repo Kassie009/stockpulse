@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { stripe } from "../integrations/stripe";
 import { getSupabaseService } from "../integrations/supabase";
+import { notifyDataRefresh } from "../integrations/firebase";
 
 /**
  * Servicio de pagos (FASE 8).
@@ -201,6 +202,8 @@ export const paymentsService = {
         stripe_payment_intent: typeof session.payment_intent === "string" ? session.payment_intent : null,
       })
       .eq("id", payment.id);
+
+    void notifyDataRefresh(userId, "portfolio"); // el balance nuevo, al instante en reloj y telefono
 
     const newBalance = Number(credited?.balance ?? 0);
 

@@ -18,6 +18,11 @@ import com.google.firebase.messaging.RemoteMessage
 class WearMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
+        // Mensaje silencioso de sincronizacion: recarga datos sin avisar
+        if (message.data["type"] == "sync") {
+            com.stockpulse.wear.data.WearSyncBus.notify()
+            return
+        }
         val notification = message.notification ?: return
         show(notification.title ?: "Alerta de precio", notification.body ?: "")
     }

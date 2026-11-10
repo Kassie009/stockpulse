@@ -70,3 +70,35 @@ export async function sendFcmNotifications(
     return `error de push: ${err instanceof Error ? err.message : String(err)}`;
   }
 }
+
+/**
+ * Mensaje silencioso de sincronizacion (FASE 9.5): avisa a TODOS los
+ * dispositivos del usuario que refresquen sus datos. Mensaje data-only
+ * (sin notificacion visible); la app escucha y vuelve a pedir
+ * portafolio/alertas AL INSTANTE (nada de esperar polling).
+ */
+export async function notifyDataRefresh(userId: string, reason: string): Promise<void> {
+  try {
+    initFirebaseAdmin();
+    if (!initialized) return;
+    // Import dinamico: evita ciclo de dependencias con supabase.ts
+    const { getSupabaseService } = await import("./supabase");
+    const supabase = getSupabaseService();
+    const { data: devices } = await supabase
+      .from("devices")
+      .select("fcm_token")
+      .eq("user_id", userId);
+    const tokens = (devices ?? [])
+      .map((d) => d.fcm_token as string | null)
+      .filter((t): t is string => Boolean(t));
+    if (tokens.length === 0) return;
+    const messages = tokens.map((token) => ({
+      data: { type: "sync", reason } as Record<string, string>,
+      token,
+    }));
+    await Promise.allSettled(messages.map((m) => getMessaging().send(m)));
+  } catch {
+    // La sincronizacion es una optimizacion: si falla, los dispositivos
+    // refrescan igual por su ciclo periodico.
+  }
+}

@@ -155,8 +155,24 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Auto-sincronizacion cada 45s: el reloj refleja cambios hechos en el
-        // telefono (p.ej. si alla borraste alertas) sin que nadie toque nada
+        // Sincronizacion INSTANTANEA: el backend avisa por FCM (mensaje
+        // silencioso "sync") cuando algo cambia en el telefono
+        LaunchedEffect(Unit) {
+            com.stockpulse.wear.data.WearSyncBus.signal.collect {
+                if (estado is EstadoApp.Resumen) {
+                    val resumen = repository.summary()
+                    if (resumen.isSuccess) {
+                        val summary = resumen.getOrThrow()
+                        val alerts: List<AlertDto> = repository
+                            .alerts()
+                            .getOrDefault(emptyList())
+                        estado = EstadoApp.Resumen(summary, alerts)
+                    }
+                }
+            }
+        }
+
+        // Auto-sincronizacion cada 45s (red de seguridad si el push fallo)
         LaunchedEffect(Unit) {
             while (true) {
                 kotlinx.coroutines.delay(45_000)

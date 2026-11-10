@@ -36,6 +36,9 @@ class DashboardViewModel @Inject constructor(
 
     init {
         loadPortfolio()
+        viewModelScope.launch {
+            com.stockpulse.app.data.sync.SyncBus.signal.collect { loadPortfolio() }
+        }
     }
 
     fun loadPortfolio() {
