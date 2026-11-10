@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -305,10 +306,7 @@ private fun PantallaLogin(onLoggedIn: () -> Unit) {
                 value = email,
                 onValueChange = { email = it },
                 placeholder = "Email",
-                imeAction = androidx.compose.ui.text.input.ImeAction.Next,
-                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
-                    onNext = { focusPassword.requestFocus() }
-                ),
+                onEnter = { focusPassword.requestFocus() },
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(6.dp))
@@ -316,10 +314,7 @@ private fun PantallaLogin(onLoggedIn: () -> Unit) {
                 value = password,
                 onValueChange = { password = it },
                 placeholder = "Contrasena",
-                imeAction = androidx.compose.ui.text.input.ImeAction.Done,
-                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
-                    onDone = { entrar() }
-                ),
+                onEnter = { entrar() },
                 secret = true,
                 modifier = Modifier.fillMaxWidth().focusRequester(focusPassword)
             )
@@ -361,8 +356,7 @@ private fun CampoRedondo(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
-    imeAction: androidx.compose.ui.text.input.ImeAction,
-    keyboardActions: androidx.compose.foundation.text.KeyboardActions,
+    onEnter: () -> Unit,
     secret: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -373,9 +367,17 @@ private fun CampoRedondo(
         textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp, color = TextDark),
         keyboardOptions = KeyboardOptions(
             keyboardType = if (secret) KeyboardType.Password else KeyboardType.Email,
-            imeAction = imeAction
+            // ImeAction.Done/Next: habilita la flecha/enter del teclado
+            imeAction = if (secret) {
+                androidx.compose.ui.text.input.ImeAction.Done
+            } else {
+                androidx.compose.ui.text.input.ImeAction.Next
+            }
         ),
-        keyboardActions = keyboardActions,
+        keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+            onNext = { onEnter() },
+            onDone = { onEnter() }
+        ),
         visualTransformation = if (secret) {
             PasswordVisualTransformation()
         } else {
@@ -386,7 +388,19 @@ private fun CampoRedondo(
                 modifier = modifier
                     .height(34.dp)
                     .background(Color(0xFFE8EDF5), androidx.compose.foundation.shape.RoundedCornerShape(9.dp))
-                    .padding(horizontal = 10.dp),
+                    .padding(horizontal = 10.dp)
+                    // El teclado de Wear manda "Enter" como tecla, no como accion IME:
+                    .onPreviewKeyEvent { evento ->
+                        if (evento.type == androidx.compose.ui.input.key.KeyEventType.KeyUp &&
+                            (evento.key == androidx.compose.ui.input.key.Key.Enter ||
+                                evento.key == androidx.compose.ui.input.key.Key.NumPadEnter)
+                        ) {
+                            onEnter()
+                            true   // consumido: no inserta salto de linea
+                        } else {
+                            false
+                        }
+                    },
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (value.isEmpty()) {
