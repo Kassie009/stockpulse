@@ -87,8 +87,32 @@ export const alertsController = {
     }
   },
 
-  /** Registro del token FCM (la app Android lo manda al encender). */
-  async registerDevice(req: Request, res: Response, next: NextFunction) {
+  /** Lista los dispositivos vinculados de la sesion (FASE 9.5). */
+  async listDevices(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { userId } = req as AuthedRequest;
+      if (!userId) {
+        res.status(401).json({ ok: false, error: "Sesion no valida" });
+        return;
+      }
+      const { getSupabaseService } = await import("../integrations/supabase");
+      const service = getSupabaseService();
+      const { data, error } = await service
+        .from("devices")
+        .select("id, platform, device_name, last_seen_at")
+        .eq("user_id", userId)
+        .order("last_seen_at", { ascending: false });
+      if (error) {
+        res.status(400).json({ ok: false, error: `No se pudo leer tus dispositivos: ${error.message}` });
+        return;
+      }
+      res.json({ ok: true, devices: data ?? [] });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /** Registro del token FCM (la app Android lo manda al encender). */  async registerDevice(req: Request, res: Response, next: NextFunction) {
     try {
       const { userId, userJwt } = req as AuthedRequest;
       if (!userId || !userJwt) {

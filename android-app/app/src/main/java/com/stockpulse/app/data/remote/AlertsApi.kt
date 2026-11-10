@@ -22,6 +22,9 @@ interface AlertsApi {
 
     @POST("api/alerts/devices")
     suspend fun registerDevice(@Body request: DeviceRequest): Response<SimpleResult>
+
+    @GET("api/alerts/devices")
+    suspend fun devices(): Response<DeviceListResponse>
 }
 
 data class CreateAlertRequest(
@@ -62,4 +65,17 @@ data class SimpleResult(
     val ok: Boolean? = null,
     val error: String? = null,
     val message: String? = null
+)
+
+data class DeviceListResponse(
+    val ok: Boolean? = null,
+    val error: String? = null,
+    val devices: List<LinkedDeviceDto>? = null
+)
+
+data class LinkedDeviceDto(
+    val id: String,
+    val platform: String? = null,
+    val device_name: String? = null,
+    val last_seen_at: String? = null
 )

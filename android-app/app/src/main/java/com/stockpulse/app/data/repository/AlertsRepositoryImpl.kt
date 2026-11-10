@@ -8,6 +8,8 @@ import com.stockpulse.app.data.remote.DeviceRequest
 import com.stockpulse.app.domain.repository.AlertsReadResult
 import com.stockpulse.app.domain.repository.AlertsRepository
 import com.stockpulse.app.domain.repository.AlertsWriteResult
+import com.stockpulse.app.domain.repository.DevicesResult
+import com.stockpulse.app.domain.repository.LinkedDevice
 import com.stockpulse.app.domain.repository.UserAlert
 import retrofit2.Response
 import javax.inject.Inject
@@ -56,6 +58,26 @@ class AlertsRepositoryImpl @Inject constructor(
             return AlertsWriteResult.Failure(extractError(response) ?: "No se pudo registrar el dispositivo")
         }
         return AlertsWriteResult.Success("Dispositivo registrado")
+    }
+
+    override suspend fun devices(): DevicesResult {
+        val response = runCatching { alertsApi.devices() }
+            .getOrElse { return DevicesResult.Failure("Sin conexion con el servidor") }
+        if (!response.isSuccessful) {
+            return DevicesResult.Failure(extractError(response) ?: "No se pudo leer tus dispositivos")
+        }
+        val body = response.body()
+            ?: return DevicesResult.Failure("Respuesta invalida del servidor")
+        return DevicesResult.Success(
+            body.devices.orEmpty().map {
+                LinkedDevice(
+                    id = it.id,
+                    platform = it.platform ?: "android",
+                    deviceName = it.device_name,
+                    lastSeenAt = it.last_seen_at
+                )
+            }
+        )
     }
 
     private fun AlertDto.toDomain() = UserAlert(

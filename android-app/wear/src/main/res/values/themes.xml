@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fondo del tema: la "ventana" del reloj ahora es el fondo claro
+         de la app (antes el Wear OS lo dejaba negro). -->
+    <style name="StockPulseTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@color/bg_light</item>
+    </style>
+</resources>

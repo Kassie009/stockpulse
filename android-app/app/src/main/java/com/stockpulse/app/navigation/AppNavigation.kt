@@ -32,6 +32,7 @@ import com.stockpulse.app.presentation.auth.SessionViewModel
 import com.stockpulse.app.presentation.auth.WelcomeScreen
 import com.stockpulse.app.presentation.dashboard.DashboardScreen
 import com.stockpulse.app.presentation.alerts.AlertsScreen
+import com.stockpulse.app.presentation.devices.DevicesScreen
 import com.stockpulse.app.presentation.payments.PaymentsScreen
 import com.stockpulse.app.presentation.market.MarketScreen
 import com.stockpulse.app.presentation.portfolio.PortfolioScreen
@@ -62,6 +63,7 @@ object Routes {
     const val MAIN = "main"
     const val ALERTS = "alerts"
     const val PAYMENTS = "payments"
+    const val DEVICES = "devices"
 }
 
 @Composable
@@ -124,6 +126,9 @@ fun StockPulseApp() {
                 },
                 onNavigateToPayments = {
                     navController.navigate(Routes.PAYMENTS)
+                },
+                onNavigateToDevices = {
+                    navController.navigate(Routes.DEVICES)
                 }
             )
         }
@@ -133,6 +138,9 @@ fun StockPulseApp() {
         composable(Routes.PAYMENTS) {
             PaymentsScreen(onBack = { navController.popBackStack() })
         }
+        composable(Routes.DEVICES) {
+            DevicesScreen(onBack = { navController.popBackStack() })
+        }
     }
 }
 
@@ -141,7 +149,8 @@ fun StockPulseApp() {
 private fun MainScaffold(
     onLogout: () -> Unit,
     onNavigateToAlerts: () -> Unit,
-    onNavigateToPayments: () -> Unit
+    onNavigateToPayments: () -> Unit,
+    onNavigateToDevices: () -> Unit
 ) {
     val tabNavController = rememberNavController()
     val backStackEntry by tabNavController.currentBackStackEntryAsState()
@@ -181,7 +190,8 @@ private fun MainScaffold(
                 ProfileScreen(
                     onLogout = onLogout,
                     onOpenAlerts = onNavigateToAlerts,
-                    onOpenPayments = onNavigateToPayments
+                    onOpenPayments = onNavigateToPayments,
+                    onOpenDevices = onNavigateToDevices
                 )
             }
         }

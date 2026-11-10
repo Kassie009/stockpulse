@@ -52,6 +52,7 @@ fun ProfileScreen(
     onLogout: () -> Unit,
     onOpenAlerts: () -> Unit = {},
     onOpenPayments: () -> Unit = {},
+    onOpenDevices: () -> Unit = {},
     sessionViewModel: SessionViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -132,10 +133,8 @@ fun ProfileScreen(
         OptionCard(
             icon = Icons.Filled.Watch,
             title = "Dispositivos vinculados",
-            subtitle = "Smartwatch Wear OS (próximamente)",
-            onClick = {
-                Toast.makeText(context, "Disponible en FASE 9", Toast.LENGTH_SHORT).show()
-            }
+            subtitle = "Teléfono y reloj que reciben tus alertas",
+            onClick = onOpenDevices
         )
         Spacer(Modifier.height(8.dp))
 
