@@ -155,6 +155,24 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        // Auto-sincronizacion cada 45s: el reloj refleja cambios hechos en el
+        // telefono (p.ej. si alla borraste alertas) sin que nadie toque nada
+        LaunchedEffect(Unit) {
+            while (true) {
+                kotlinx.coroutines.delay(45_000)
+                if (estado is EstadoApp.Resumen) {
+                    val resumen = repository.summary()
+                    if (resumen.isSuccess) {
+                        val summary = resumen.getOrThrow()
+                        val alerts: List<AlertDto> = repository
+                            .alerts()
+                            .getOrDefault(emptyList())
+                        estado = EstadoApp.Resumen(summary, alerts)
+                    }
+                }
+            }
+        }
+
         // Registro del reloj para recibir FCM (idempotente del lado backend)
         LaunchedEffect(estado) {
             if (estado is EstadoApp.Resumen) {
