@@ -318,7 +318,9 @@ private fun PantallaLogin(onLoggedIn: () -> Unit) {
                     keyboardActions = androidx.compose.foundation.text.KeyboardActions(
                         onNext = { focusPassword.requestFocus() }
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp)
                 )
             }
             item {
@@ -337,7 +339,10 @@ private fun PantallaLogin(onLoggedIn: () -> Unit) {
                     keyboardActions = androidx.compose.foundation.text.KeyboardActions(
                         onDone = { entrar() }
                     ),
-                    modifier = Modifier.fillMaxWidth().focusRequester(focusPassword)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp)
+                        .focusRequester(focusPassword)
                 )
             }
             item {
@@ -348,7 +353,9 @@ private fun PantallaLogin(onLoggedIn: () -> Unit) {
                         backgroundColor = BrandNavy,
                         contentColor = Color.White
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp)
                 ) {
                     Text(if (enviando) "Entrando…" else "Entrar")
                 }

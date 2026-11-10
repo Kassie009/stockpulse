@@ -205,6 +205,10 @@ private fun CheckoutOverlay(url: String, onClose: () -> Unit) {
             factory = { context ->
                 WebView(context).apply {
                     settings.javaScriptEnabled = true
+                    // Hace que la pagina de Stripe use el ancho del dispositivo
+                    settings.useWideViewPort = true
+                    settings.setLoadWithOverviewMode(true)
+                    settings.setSupportZoom(false)
                     webViewClient = object : WebViewClient() {
                         override fun shouldOverrideUrlLoading(
                             view: WebView?,

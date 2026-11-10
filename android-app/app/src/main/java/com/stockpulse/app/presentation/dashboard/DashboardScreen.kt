@@ -200,7 +200,7 @@ private fun MovementRow(tx: TransactionView) {
                 }
                 if (pnlColor != null) {
                     Text(
-                    text = "${if ((tx.profitLoss ?: 0.0) >= 0.0) "Ganancia " else "Pérdida "}${if ((tx.profitLoss ?: 0.0) >= 0.0) "+" else ""}${"%,.2f".format(kotlin.math.abs(tx.profitLoss ?: 0.0))}",
+                        text = "P&L ${if ((tx.profitLoss ?: 0.0) >= 0.0) "+" else ""}${"%,.2f".format(tx.profitLoss)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = pnlColor
                     )
