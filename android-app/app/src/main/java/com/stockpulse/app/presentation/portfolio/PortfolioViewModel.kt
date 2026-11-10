@@ -34,6 +34,13 @@ class PortfolioViewModel @Inject constructor(
         viewModelScope.launch {
             com.stockpulse.app.data.sync.SyncBus.signal.collect { refresh() }
         }
+        // Auto-refresco cada 30s mientras Portafolio est visible
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(30_000)
+                refresh()
+            }
+        }
     }
 
     fun refresh() {

@@ -39,6 +39,13 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             com.stockpulse.app.data.sync.SyncBus.signal.collect { loadPortfolio() }
         }
+        // Auto-refresco cada 30s mientras el Dashboard est visible
+        viewModelScope.launch {
+            while (true) {
+                delay(30_000)
+                loadPortfolio()
+            }
+        }
     }
 
     fun loadPortfolio() {
