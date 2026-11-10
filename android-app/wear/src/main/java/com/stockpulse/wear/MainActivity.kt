@@ -369,7 +369,6 @@ private fun CampoRedondo(
         textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp, color = TextDark),
         keyboardOptions = KeyboardOptions(
             keyboardType = if (secret) KeyboardType.Password else KeyboardType.Email,
-            // ImeAction.Done/Next: habilita la flecha/enter del teclado
             imeAction = if (secret) {
                 androidx.compose.ui.text.input.ImeAction.Done
             } else {
@@ -385,24 +384,24 @@ private fun CampoRedondo(
         } else {
             androidx.compose.ui.text.input.VisualTransformation.None
         },
+        modifier = modifier.onPreviewKeyEvent { evento ->
+            // El teclado de Wear manda "Enter" como tecla, no como accion IME
+            if (evento.type == androidx.compose.ui.input.key.KeyEventType.KeyUp &&
+                (evento.key == androidx.compose.ui.input.key.Key.Enter ||
+                    evento.key == androidx.compose.ui.input.key.Key.NumPadEnter)
+            ) {
+                onEnter()
+                true   // consumido: no inserta salto de linea
+            } else {
+                false
+            }
+        },
         decorationBox = { inner ->
             androidx.compose.foundation.layout.Row(
-                modifier = modifier
+                modifier = Modifier
                     .height(34.dp)
                     .background(Color(0xFFE8EDF5), androidx.compose.foundation.shape.RoundedCornerShape(9.dp))
-                    .padding(horizontal = 10.dp)
-                    // El teclado de Wear manda "Enter" como tecla, no como accion IME:
-                    .onPreviewKeyEvent { evento ->
-                        if (evento.type == androidx.compose.ui.input.key.KeyEventType.KeyUp &&
-                            (evento.key == androidx.compose.ui.input.key.Key.Enter ||
-                                evento.key == androidx.compose.ui.input.key.Key.NumPadEnter)
-                        ) {
-                            onEnter()
-                            true   // consumido: no inserta salto de linea
-                        } else {
-                            false
-                        }
-                    },
+                    .padding(horizontal = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (value.isEmpty()) {
