@@ -244,8 +244,6 @@ private fun PantallaLogin(onLoggedIn: () -> Unit) {
     val scope = rememberCoroutineScope()
     val focusPassword = remember { androidx.compose.ui.focus.FocusRequester() }
 
-    val listaEstado = rememberScalingLazyListState(initialCenterItemIndex = 0)
-
     // Entrar: compartido entre el circulo azul (IME) y el boton
     val entrar: () -> Unit = {
         if (email.isBlank() || !email.contains("@")) {
@@ -278,103 +276,121 @@ private fun PantallaLogin(onLoggedIn: () -> Unit) {
         }
     }
 
-    Scaffold(timeText = WearTimeText) {
-        ScalingLazyColumn(
-            state = listaEstado,
-            modifier = Modifier.fillMaxSize(),
-            autoCentering = AutoCenteringParams(itemIndex = 0)
+    // Columna compacta y centrada: SIEMPRE cabe en el reloj redondo
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            item {
-                Column(Modifier.fillMaxWidth()) {
-                    Text(
-                        "STOCKPULSE",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = BrandNavy,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Text(
-                        "Inicia sesion para ver tu portafolio",
-                        fontSize = 10.sp,
-                        color = TextMuted,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-            item {
-                TextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    placeholder = {
-                        androidx.compose.material3.Text("Email", fontSize = 10.sp, color = TextMuted)
-                    },
-                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp, color = TextDark),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
-                        imeAction = androidx.compose.ui.text.input.ImeAction.Next
-                    ),
-                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(
-                        onNext = { focusPassword.requestFocus() }
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp)
-                )
-            }
-            item {
-                TextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    placeholder = {
-                        androidx.compose.material3.Text("Contrasena", fontSize = 10.sp, color = TextMuted)
-                    },
-                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp, color = TextDark),
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = androidx.compose.ui.text.input.ImeAction.Done
-                    ),
-                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(
-                        onDone = { entrar() }
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp)
-                        .focusRequester(focusPassword)
-                )
-            }
-            item {
-                Button(
-                    onClick = entrar,
-                    enabled = !enviando,
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = BrandNavy,
-                        contentColor = Color.White
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp)
-                ) {
-                    Text(if (enviando) "Entrando…" else "Entrar")
-                }
+            Text(
+                "STOCKPULSE",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = BrandNavy,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Text(
+                "Inicia sesion",
+                fontSize = 10.sp,
+                color = TextMuted,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(4.dp))
+            CampoRedondo(
+                value = email,
+                onValueChange = { email = it },
+                placeholder = "Email",
+                imeAction = androidx.compose.ui.text.input.ImeAction.Next,
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                    onNext = { focusPassword.requestFocus() }
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(6.dp))
+            CampoRedondo(
+                value = password,
+                onValueChange = { password = it },
+                placeholder = "Contrasena",
+                imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                    onDone = { entrar() }
+                ),
+                secret = true,
+                modifier = Modifier.fillMaxWidth().focusRequester(focusPassword)
+            )
+            Spacer(Modifier.height(8.dp))
+            Button(
+                onClick = entrar,
+                enabled = !enviando,
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = BrandNavy,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (enviando) "Entrando…" else "Entrar")
             }
             error?.let { msg ->
-                item {
-                    Text(
-                        msg,
-                        color = AccentLoss,
-                        fontSize = 10.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
-                    )
-                }
+                Text(
+                    msg,
+                    color = AccentLoss,
+                    fontSize = 10.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp)
+                )
             }
         }
     }
+}
+
+/** Campo compacto (34dp) con caja redondeada, pensado para la muneca. */
+@Composable
+private fun CampoRedondo(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    imeAction: androidx.compose.ui.text.input.ImeAction,
+    keyboardActions: androidx.compose.foundation.text.KeyboardActions,
+    secret: Boolean = false,
+    modifier: Modifier = Modifier
+) {
+    androidx.compose.foundation.text.BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = true,
+        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp, color = TextDark),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = if (secret) KeyboardType.Password else KeyboardType.Email,
+            imeAction = imeAction
+        ),
+        keyboardActions = keyboardActions,
+        visualTransformation = if (secret) {
+            PasswordVisualTransformation()
+        } else {
+            androidx.compose.ui.text.input.VisualTransformation.None
+        },
+        decorationBox = { inner ->
+            androidx.compose.foundation.layout.Row(
+                modifier = modifier
+                    .height(34.dp)
+                    .background(Color(0xFFE8EDF5), androidx.compose.foundation.shape.RoundedCornerShape(9.dp))
+                    .padding(horizontal = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (value.isEmpty()) {
+                    Text(placeholder, fontSize = 10.sp, color = TextMuted)
+                }
+                inner()
+            }
+        }
+    )
 }
 
 @Composable
