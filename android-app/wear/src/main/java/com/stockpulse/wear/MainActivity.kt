@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -373,175 +374,109 @@ private fun PantallaResumen(
     val pnl = valor - cost
     val pnlPct = if (cost > 0.0) (pnl / cost) * 100.0 else 0.0
     val pnlColor = if (pnl >= 0.0) AccentGain else AccentLoss
-    val hora = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+    val posiciones = summary.holdingsEnVivo.orEmpty()
 
-    val listaEstado = rememberScalingLazyListState(initialCenterItemIndex = 1)
+    val listaEstado = rememberScalingLazyListState(initialCenterItemIndex = 0)
 
     Scaffold(
         timeText = WearTimeText,
         positionIndicator = { PositionIndicator(scalingLazyListState = listaEstado) }
     ) {
         ScalingLazyColumn(state = listaEstado, modifier = Modifier.fillMaxSize()) {
-            item {
-                Text(
-                    "STOCKPULSE",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = BrandNavy,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+            // Lo esencial: saldo real
             item {
                 Column(Modifier.fillMaxWidth()) {
                     Text(
-                        "Portafolio",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        "Saldo",
+                        fontSize = 9.sp,
                         color = TextMuted,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
                         "$${"%,.2f".format(saldo)}",
-                        fontSize = 16.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextDark,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
+                }
+            }
+            // Portafolio en una sola linea
+            item {
+                Text(
+                    "Portafolio $${"%,.2f".format(valor)} · ${if (pnl >= 0.0) "+" else ""}${"%,.2f".format(pnl)} (${if (pnlPct >= 0.0) "+" else ""}${"%.2f".format(pnlPct)}%)",
+                    fontSize = 11.sp,
+                    color = pnlColor,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            // Posiciones: una linea por titulo
+            if (posiciones.isEmpty()) {
+                item {
                     Text(
-                        "saldo disponible",
-                        fontSize = 9.sp,
+                        "Sin posiciones",
+                        fontSize = 10.sp,
                         color = TextMuted,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
-            item {
-                Column(Modifier.fillMaxWidth()) {
-                    Text(
-                        "$${"%,.2f".format(valor)}",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TextDark,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Text(
-                        "${if (pnl >= 0.0) "+" else ""}${"%,.2f".format(pnl)} (${if (pnlPct >= 0.0) "+" else ""}${"%.2f".format(pnlPct)}%)",
-                        fontSize = 10.sp,
-                        color = pnlColor,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-            item {
-                Text(
-                    "Posiciones",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextMuted
-                )
-            }
-            (summary.holdingsEnVivo.orEmpty()).forEach { h ->
-                item {
-                    Column(Modifier.fillMaxWidth()) {
-                        Text(
-                            "${h.symbol} x${h.quantity ?: 0}",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = TextDark,
-                            overflow = TextOverflow.Ellipsis,
-                            maxLines = 1,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Text(
-                            buildString {
-                                h.marketValue.let { append("$${"%,.2f".format(it)}") }
-                                h.unrealizedPnl?.let {
-                                    append(" · ${if (it >= 0.0) "+" else ""}${"%,.2f".format(it)}")
-                                }
-                            },
-                            fontSize = 9.sp,
-                            color = TextMuted,
-                            overflow = TextOverflow.Ellipsis,
-                            maxLines = 1,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-            }
-            if ((summary.holdingsEnVivo.orEmpty()).isEmpty()) {
-                item {
-                    Text(
-                        "Sin posiciones abiertas",
-                        fontSize = 10.sp,
-                        color = TextMuted
-                    )
-                }
-            }
-            item {
-                Text(
-                    "Tus alertas",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextMuted
-                )
-            }
-            estado.alerts.forEach { alerta ->
+            posiciones.forEach { h ->
                 item {
                     Text(
                         buildString {
-                            append(alerta.symbol)
-                            when (alerta.type) {
-                                "price_above" -> append(" ≥")
-                                "price_below" -> append(" ≤")
-                                "change_pos", "change_neg" -> append("%")
-                                else -> append(" ")
+                            append("${h.symbol} x${h.quantity ?: 0}")
+                            h.unrealizedPnl?.let {
+                                append("  ${if (it >= 0.0) "+" else ""}${"%,.2f".format(it)}")
                             }
-                            alerta.threshold.let { append(" $${"%,.2f".format(it)}") }
                         },
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         color = TextDark,
                         overflow = TextOverflow.Ellipsis,
-                        maxLines = 1
+                        maxLines = 1,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
-            if (estado.alerts.isEmpty()) {
-                item {
-                    Text(
-                        "Sin alertas (crealas en el telefono)",
-                        fontSize = 9.sp,
-                        color = TextMuted
-                    )
-                }
-            }
+            // Alertas compactas en una linea
             item {
                 Text(
-                    "Actualizado $hora",
-                    fontSize = 8.sp,
+                    if (estado.alerts.isEmpty()) {
+                        "Sin alertas activas"
+                    } else {
+                        estado.alerts.joinToString("   ") { alerta ->
+                            when (alerta.type) {
+                                "price_above" -> "${alerta.symbol} ≥$${"%,.0f".format(alerta.threshold)}"
+                                "price_below" -> "${alerta.symbol} ≤$${"%,.0f".format(alerta.threshold)}"
+                                else -> "${alerta.symbol} ${"%,.1f".format(alerta.threshold)}%"
+                            }
+                        }
+                    },
+                    fontSize = 9.sp,
                     color = TextMuted,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 2,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+            // Cerrar sesion: texto discreto, sin boton gigante
             item {
-                Button(
-                    onClick = onLogout,
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = AccentLoss,
-                        contentColor = Color.White
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Cerrar sesion")
-                }
+                androidx.compose.material3.Text(
+                    "Cerrar sesion",
+                    fontSize = 10.sp,
+                    color = TextMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onLogout)
+                        .padding(vertical = 8.dp)
+                )
             }
         }
     }
