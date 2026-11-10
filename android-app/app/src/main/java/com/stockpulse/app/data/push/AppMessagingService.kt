@@ -34,7 +34,7 @@ class AppMessagingService : FirebaseMessagingService() {
         // Mensaje silencioso de sincronizacion: refresca las pantallas
         // abiertas al instante (sin notificar nada al usuario)
         if (remoteMessage.data["type"] == "sync") {
-            com.stockpulse.app.data.sync.SyncBus.notify()
+            com.stockpulse.app.data.sync.SyncBus.notifySync()
             return
         }
         val notification = remoteMessage.notification ?: return

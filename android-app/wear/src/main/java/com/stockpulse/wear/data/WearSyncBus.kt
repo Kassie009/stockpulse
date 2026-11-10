@@ -12,7 +12,7 @@ object WearSyncBus {
     private val internal = MutableSharedFlow<Long>(extraBufferCapacity = 8)
     val signal: SharedFlow<Long> = internal
 
-    fun notify() {
+    fun notifySync() {
         internal.tryEmit(System.currentTimeMillis())
     }
 }

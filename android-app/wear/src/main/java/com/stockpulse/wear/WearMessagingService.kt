@@ -20,7 +20,7 @@ class WearMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         // Mensaje silencioso de sincronizacion: recarga datos sin avisar
         if (message.data["type"] == "sync") {
-            com.stockpulse.wear.data.WearSyncBus.notify()
+            com.stockpulse.wear.data.WearSyncBus.notifySync()
             return
         }
         val notification = message.notification ?: return
