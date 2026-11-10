@@ -21,4 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "stockpulse"
 include(":app")
+include(":wear")
  
