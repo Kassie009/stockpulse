@@ -252,7 +252,15 @@ class MainActivity : ComponentActivity() {
                     onLoggedIn = { estado = EstadoApp.CargandoDatos }
                 )
                 is EstadoApp.Bloqueado -> PantallaBloqueo(
-                    onUnlock = { estado = EstadoApp.CargandoDatos }
+                    context = applicationContext,
+                    onUnlock = { estado = EstadoApp.CargandoDatos },
+                    onLogout = {
+                        scope.launch {
+                            WearSession.clear(applicationContext)
+                            com.stockpulse.wear.data.WearPin.clear(applicationContext)
+                            estado = EstadoApp.Login
+                        }
+                    }
                 )
                 is EstadoApp.Resumen -> PantallaResumen(
                     estado = actual,
@@ -289,6 +297,123 @@ private sealed interface EstadoApp {
         val alerts: List<AlertDto>
     ) : EstadoApp
     data class Error(val mensaje: String) : EstadoApp
+}
+
+/** Pantalla de bloqueo con PIN: nada sensible visible sin el codigo. */
+@Composable
+private fun PantallaBloqueo(
+    context: android.content.Context,
+    onUnlock: () -> Unit,
+    onLogout: () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    var pin by remember { mutableStateOf("") }
+    var crear by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var listo by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        crear = !com.stockpulse.wear.data.WearPin.hasPin(context)
+        listo = true
+    }
+
+    val accion: () -> Unit = {
+        if (pin.length != 4) {
+            error = "El PIN debe tener 4 digitos"
+        } else {
+            error = null
+            scope.launch {
+                if (crear) {
+                    com.stockpulse.wear.data.WearPin.setPin(context, pin)
+                    onUnlock()
+                } else if (com.stockpulse.wear.data.WearPin.checkPin(context, pin)) {
+                    onUnlock()
+                } else {
+                    error = "PIN incorrecto"
+                    pin = ""
+                }
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("🔒", fontSize = 24.sp)
+            Text(
+                "Saldo protegido",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextDark,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            if (listo) {
+                Text(
+                    if (crear) "Crea tu PIN de 4 digitos" else "Escribe tu PIN para desbloquear",
+                    fontSize = 9.sp,
+                    color = TextMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(6.dp))
+                CampoRedondo(
+                    value = pin,
+                    onValueChange = { nuevo ->
+                        if (nuevo.length <= 4 && nuevo.all { c -> c.isDigit() }) pin = nuevo
+                    },
+                    placeholder = if (crear) "Nuevo PIN" else "PIN",
+                    onEnter = accion,
+                    secret = true,
+                    numeric = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                error?.let { msg ->
+                    Text(
+                        msg,
+                        color = AccentLoss,
+                        fontSize = 9.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = accion,
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = BrandNavy,
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        if (crear) "Guardar PIN" else "Desbloquear",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                if (!crear) {
+                    androidx.compose.material3.Text(
+                        "Olvidaste tu PIN? Cerrar sesion",
+                        fontSize = 9.sp,
+                        color = TextMuted,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onLogout)
+                            .padding(vertical = 6.dp)
+                    )
+                }
+            }
+        }
+    }
 }
 
 /** Pantalla de bloqueo: nada sensible visible hasta que confirme el usuario. */
@@ -466,6 +591,7 @@ private fun CampoRedondo(
     placeholder: String,
     onEnter: () -> Unit,
     secret: Boolean = false,
+    numeric: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     androidx.compose.foundation.text.BasicTextField(
@@ -474,7 +600,11 @@ private fun CampoRedondo(
         singleLine = true,
         textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp, color = TextDark),
         keyboardOptions = KeyboardOptions(
-            keyboardType = if (secret) KeyboardType.Password else KeyboardType.Email,
+            keyboardType = when {
+                secret -> KeyboardType.Password
+                numeric -> KeyboardType.NumberPassword
+                else -> KeyboardType.Email
+            },
             imeAction = if (secret) {
                 androidx.compose.ui.text.input.ImeAction.Done
             } else {
