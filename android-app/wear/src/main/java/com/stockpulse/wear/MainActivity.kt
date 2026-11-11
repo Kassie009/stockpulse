@@ -101,6 +101,8 @@ private fun wearColors(): WearColors = WearColors(
 /**
  * FASE 9 - StockPulse en la muneca.
  * - Login una vez (token persistido en DataStore)
+ * - Seguridad: al abrir la app NADA se muestra sin confirmar (pantalla
+ *   de bloqueo) y FLAG_SECURE la oculta del multitarea
  * - Resumen real: saldo, valor del portafolio, P&L, posiciones y alertas
  * - Registro FCM con platform "wearos" -> las alertas llegan al reloj
  */
@@ -114,6 +116,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         repository = WearRepository(this)
+
+        // Seguridad bancaria: el contenido NUNCA aparece en el multitarea
+        window.setFlags(
+            android.view.WindowManager.LayoutParams.FLAG_SECURE,
+            android.view.WindowManager.LayoutParams.FLAG_SECURE
+        )
 
         // Permiso de notificaciones (API 33+) para las alertas en la muneca
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -131,10 +139,11 @@ class MainActivity : ComponentActivity() {
         val scope = rememberCoroutineScope()
         var estado by remember { mutableStateOf<EstadoApp>(EstadoApp.Iniciando) }
 
-        // Al abrir: si hay token guardado, directo al resumen
+        // Al abrir: si hay token guardado, va a la pantalla de BLOQUEO
+        // (nada de datos sensibles sin confirmar - regla del maestro)
         LaunchedEffect(Unit) {
             val token = WearSession.tokenOrNull(applicationContext)
-            estado = if (token == null) EstadoApp.Login else EstadoApp.CargandoDatos
+            estado = if (token == null) EstadoApp.Login else EstadoApp.Bloqueado
         }
 
         // Carga de datos SOLO si ya hay sesion (tras login o token persistido)
@@ -225,6 +234,9 @@ class MainActivity : ComponentActivity() {
                 is EstadoApp.Login -> PantallaLogin(
                     onLoggedIn = { estado = EstadoApp.CargandoDatos }
                 )
+                is EstadoApp.Bloqueado -> PantallaBloqueo(
+                    onUnlock = { estado = EstadoApp.CargandoDatos }
+                )
                 is EstadoApp.Resumen -> PantallaResumen(
                     estado = actual,
                     onLogout = {
@@ -253,6 +265,7 @@ class MainActivity : ComponentActivity() {
 private sealed interface EstadoApp {
     data object Iniciando : EstadoApp
     data object Login : EstadoApp
+    data object Bloqueado : EstadoApp
     data object CargandoDatos : EstadoApp
     data class Resumen(
         val summary: com.stockpulse.wear.data.SummaryDto,
@@ -261,9 +274,51 @@ private sealed interface EstadoApp {
     data class Error(val mensaje: String) : EstadoApp
 }
 
+/** Pantalla de bloqueo: nada sensible visible hasta que confirme el usuario. */
 @Composable
-private fun PantallaCargando(texto: String) {
-    Scaffold() {
+private fun PantallaBloqueo(onUnlock: () -> Unit) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("🔒", fontSize = 26.sp)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Saldo protegido",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextDark,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Text(
+                "Tus datos quedan ocultos hasta que confirmes",
+                fontSize = 9.sp,
+                color = TextMuted,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(8.dp))
+            Button(
+                onClick = onUnlock,
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = BrandNavy,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Desbloquear", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PantallaCargando(texto: String) {    Scaffold() {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
             Text(texto, Modifier.padding(top = 40.dp), fontSize = 11.sp, maxLines = 1)
