@@ -339,10 +339,10 @@ private fun PantallaBloqueo(
             modifier = Modifier.padding(horizontal = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("🔒", fontSize = 24.sp)
+            Text("🔒", fontSize = 15.sp)
             Text(
                 "Saldo protegido",
-                fontSize = 12.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextDark,
                 textAlign = TextAlign.Center,
@@ -351,12 +351,12 @@ private fun PantallaBloqueo(
             if (listo) {
                 Text(
                     if (crear) "Crea tu PIN de 4 digitos" else "Escribe tu PIN para desbloquear",
-                    fontSize = 9.sp,
+                    fontSize = 8.sp,
                     color = TextMuted,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(4.dp))
                 CampoRedondo(
                     value = pin,
                     onValueChange = { nuevo ->
@@ -372,38 +372,39 @@ private fun PantallaBloqueo(
                     Text(
                         msg,
                         color = AccentLoss,
-                        fontSize = 9.sp,
+                        fontSize = 8.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 4.dp)
+                            .padding(top = 3.dp)
                     )
                 }
-                Spacer(Modifier.height(8.dp))
-                Button(
-                    onClick = accion,
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = BrandNavy,
-                        contentColor = Color.White
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                Spacer(Modifier.height(5.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(30.dp)
+                        .background(BrandNavy, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                        .clickable(enabled = true) { accion() },
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
                         if (crear) "Guardar PIN" else "Desbloquear",
-                        fontSize = 11.sp,
+                        fontSize = 10.sp,
+                        color = Color.White,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
                 if (!crear) {
                     androidx.compose.material3.Text(
                         "Olvidaste tu PIN? Cerrar sesion",
-                        fontSize = 9.sp,
+                        fontSize = 8.sp,
                         color = TextMuted,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable(onClick = onLogout)
-                            .padding(vertical = 6.dp)
+                            .padding(vertical = 4.dp)
                     )
                 }
             }
