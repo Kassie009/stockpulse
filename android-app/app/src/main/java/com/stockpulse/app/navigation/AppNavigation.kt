@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -72,11 +73,36 @@ fun StockPulseApp() {
     val session by sessionViewModel.session.collectAsState()
     val sessionReady by sessionViewModel.sessionReady.collectAsState()
 
+    // Seguridad (FASE 9.5): con sesion guardada, la app abre BLOQUEADA y
+    // exige huella/PIN del telefono. Re-bloquea al salir de primer plano.
+    var desbloqueada by androidx.compose.runtime.remember {
+        androidx.compose.runtime.mutableStateOf(false)
+    }
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observador = androidx.lifecycle.LifecycleEventObserver { _, evento ->
+            if (evento == androidx.lifecycle.Lifecycle.Event.ON_STOP) {
+                desbloqueada = false
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observador)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observador) }
+    }
+
     // Puerta de entrada REAL: sesion persistida -> entra directo a la app
     if (!sessionReady) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
+        return
+    }
+
+    if (session != null && !desbloqueada) {
+        com.stockpulse.app.presentation.security.LockGate(
+            onUnlocked = { desbloqueada = true },
+            onLogout = { sessionViewModel.logout() },
+            content = { }
+        )
         return
     }
 
