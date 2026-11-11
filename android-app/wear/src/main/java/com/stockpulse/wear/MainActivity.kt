@@ -264,12 +264,7 @@ class MainActivity : ComponentActivity() {
                 )
                 is EstadoApp.Resumen -> PantallaResumen(
                     estado = actual,
-                    onLogout = {
-                        scope.launch {
-                            WearSession.clear(applicationContext)
-                            estado = EstadoApp.Login
-                        }
-                    }
+                    onLock = { estado = EstadoApp.Bloqueado }
                 )
                 is EstadoApp.Error -> PantallaError(
                     mensaje = actual.mensaje,
@@ -416,51 +411,9 @@ private fun PantallaBloqueo(
     }
 }
 
-/** Pantalla de bloqueo: nada sensible visible hasta que confirme el usuario. */
 @Composable
-private fun PantallaBloqueo(onUnlock: () -> Unit) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text("🔒", fontSize = 26.sp)
-            Spacer(Modifier.height(4.dp))
-            Text(
-                "Saldo protegido",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextDark,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Text(
-                "Tus datos quedan ocultos hasta que confirmes",
-                fontSize = 9.sp,
-                color = TextMuted,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(Modifier.height(8.dp))
-            Button(
-                onClick = onUnlock,
-                colors = ButtonDefaults.buttonColors(
-                    backgroundColor = BrandNavy,
-                    contentColor = Color.White
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Desbloquear", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-            }
-        }
-    }
-}
-
-@Composable
-private fun PantallaCargando(texto: String) {    Scaffold() {
+private fun PantallaCargando(texto: String) {
+    Scaffold() {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
             Text(texto, Modifier.padding(top = 40.dp), fontSize = 11.sp, maxLines = 1)
@@ -653,7 +606,7 @@ private fun CampoRedondo(
 @OptIn(ExperimentalFoundationApi::class)
 private fun PantallaResumen(
     estado: EstadoApp.Resumen,
-    onLogout: () -> Unit
+    onLock: () -> Unit
 ) {
     val summary = estado.summary
     val saldo = summary.balance ?: 0.0
@@ -811,13 +764,13 @@ private fun PantallaResumen(
                             verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
                         ) {
                             androidx.compose.material3.Text(
-                                "Cerrar sesion",
+                                "Bloquear",
                                 fontSize = 13.sp,
                                 color = AccentLoss,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable(onClick = onLogout)
+                                    .clickable(onClick = onLock)
                                     .padding(vertical = 12.dp)
                             )
                             Text(
