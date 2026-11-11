@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -138,6 +139,22 @@ class MainActivity : ComponentActivity() {
     private fun StockPulseWearApp() {
         val scope = rememberCoroutineScope()
         var estado by remember { mutableStateOf<EstadoApp>(EstadoApp.Iniciando) }
+
+        // Re-bloqueo automatico: al salir de primer plano (boton home,
+        // regresar al reloj, multitarea) la app vuelve al candado. Asi
+        // 'abrir la app' SIEMPRE pasa por el desbloqueo.
+        val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+        DisposableEffect(lifecycleOwner) {
+            val observador = androidx.lifecycle.LifecycleEventObserver { _, evento ->
+                if (evento == androidx.lifecycle.Lifecycle.Event.ON_STOP) {
+                    if (estado is EstadoApp.Resumen || estado is EstadoApp.Error) {
+                        estado = EstadoApp.Bloqueado
+                    }
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observador)
+            onDispose { lifecycleOwner.lifecycle.removeObserver(observador) }
+        }
 
         // Al abrir: si hay token guardado, va a la pantalla de BLOQUEO
         // (nada de datos sensibles sin confirmar - regla del maestro)
